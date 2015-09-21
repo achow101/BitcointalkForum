@@ -11,16 +11,23 @@ public class Topic {
     private String starter;
     private int replies;
     private int views;
-    private String lastPoster;
-    private Date lastPostDate;
+    private String lastPost;
+    private boolean sticky;
+    private boolean locked;
+    private boolean hasUnread;
+    private String URL;
+    private long id;
 
-    public Topic(String subject, String starter, int replies, int views, String lastPoster, Date lastPostDate) {
+    public Topic(String subject, String starter, int replies, int views, String lastPost, boolean sticky, boolean locked, boolean hasUnread, long id) {
         this.subject = subject;
         this.starter = starter;
         this.replies = replies;
         this.views = views;
-        this.lastPoster = lastPoster;
-        this.lastPostDate = lastPostDate;
+        this.lastPost = lastPost;
+        this.sticky = sticky;
+        this.locked = locked;
+        this.hasUnread = hasUnread;
+        this.id = id;
     }
 
     public String getSubject() {
@@ -41,13 +48,38 @@ public class Topic {
         return views;
     }
 
-    public String getLastPoster()
+    public String getLastPost()
     {
-        return lastPoster;
+        return lastPost;
     }
 
-    public Date getLastPostDate()
+    public boolean isSticky()
     {
-        return lastPostDate;
+        return sticky;
+    }
+
+    public boolean isLocked()
+    {
+        return locked;
+    }
+
+    public boolean hasUnreadPosts()
+    {
+        return hasUnread;
+    }
+
+    public void setURL(String URL)
+    {
+        this.URL = URL;
+    }
+
+    public String getUrl()
+    {
+        return URL;
+    }
+
+    public long getId()
+    {
+        return id;
     }
 }

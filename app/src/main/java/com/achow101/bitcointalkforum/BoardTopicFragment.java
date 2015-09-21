@@ -1,8 +1,14 @@
 package com.achow101.bitcointalkforum;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.database.DataSetObserver;
+import android.graphics.Typeface;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -10,8 +16,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -41,16 +52,20 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
     private AbsListView mListView;
 
     private ListAdapter mAdapter;
-    private List<Board> childBoards;
-    private List<Topic> topics;
+    private List<Board> mChildBoards;
+    private List<Topic> mTopics;
     private String mBoardURL;
     private String mSessId;
 
-    public static BoardTopicFragment newInstance(String boardURL, String sessId) {
+    private GetTopics mGetTopicsTask = null;
+    private ProgressBar mProgressView;
+
+    public static BoardTopicFragment newInstance(String boardURL, String sessId, String category) {
         BoardTopicFragment fragment = new BoardTopicFragment();
         Bundle args = new Bundle();
         args.putString("URL", boardURL);
         args.putString("SessID", sessId);
+        args.putString("Category", category);
         fragment.setArguments(args);
         return fragment;
     }
@@ -78,26 +93,62 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         mSessId = getArguments().getString("SessID");
 
         // Get the ListView
-        mListView = (ListView) view.findViewById(android.R.id.list);
+        mListView = (ListView) view.findViewById(R.id.topics_list);
+        mProgressView = (ProgressBar) view.findViewById(R.id.topic_loading_progress);
 
         // Get the topics from Bitcointalk
-
-
-        // Set OnItemClickListener so we can be notified on item clicks
-        mListView.setOnItemClickListener(this);
+        showProgress(true);
+        mGetTopicsTask = new GetTopics(mSessId, mBoardURL, getArguments().getString("Category"));
+        mGetTopicsTask.execute((Void) null);
 
         return view;
+    }
+
+    /**
+     * Shows the progress UI and hides the login form.
+     */
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
+    public void showProgress(final boolean show) {
+        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
+        // for very easy animations. If available, use these APIs to fade-in
+        // the progress spinner.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
+            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
+
+            mListView.setVisibility(show ? View.GONE : View.VISIBLE);
+            mListView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mListView.setVisibility(show ? View.GONE : View.VISIBLE);
+                }
+            });
+
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mProgressView.animate().setDuration(shortAnimTime).alpha(
+                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
+                @Override
+                public void onAnimationEnd(Animator animation) {
+                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+                }
+            });
+        } else {
+            // The ViewPropertyAnimator APIs are not available, so simply show
+            // and hide the relevant UI components.
+            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+            mListView.setVisibility(show ? View.GONE : View.VISIBLE);
+        }
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        try {
+        /*try {
             mListener = (OnListInteraction) activity;
         } catch (ClassCastException e) {
             throw new ClassCastException(activity.toString()
                     + " must implement OnListInteraction");
-        }
+        }*/
     }
 
     @Override
@@ -131,10 +182,12 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
     public class CustomListAdapter implements ListAdapter
     {
         private List<Topic> topics;
+        private List<Board> childBoards;
 
-        public CustomListAdapter(List<Topic> topics)
+        public CustomListAdapter(List<Topic> topics, List<Board> childBoards)
         {
             this.topics = topics;
+            this.childBoards = childBoards;
         }
 
         @Override
@@ -159,17 +212,29 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
 
         @Override
         public int getCount() {
-            return 0;
+            return childBoards.size() + 1;
         }
 
         @Override
         public Object getItem(int position) {
-            return null;
+            if (position == 1) {
+                return childBoards;
+            } else
+            {
+                return topics.get(position + 1);
+            }
         }
 
         @Override
         public long getItemId(int position) {
-            return 0;
+            if(position == 0)
+            {
+                return 0;
+            }
+            else
+            {
+                return topics.get(position).getId();
+            }
         }
 
         @Override
@@ -179,17 +244,80 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
 
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
-            return null;
+            View v = convertView;
+            if (v == null && getItemViewType(position) == 1) {
+                LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                v = infalInflater.inflate(R.layout.topic_in_list_layout, null);
+            }
+            if(v == null && getItemViewType(position) == 0)
+            {
+                LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                v = infalInflater.inflate(R.layout.child_board_layout, null);
+            }
+            if(getItemViewType(position) == 1)
+            {
+                // Get layout stuff
+                TextView topicSubject = (TextView)v.findViewById(R.id.topic_list_title);
+                TextView topicStarter = (TextView)v.findViewById(R.id.topic_starter);
+                TextView topicLastPost = (TextView)v.findViewById(R.id.topic_last_post);
+                ImageButton goToLastPost = (ImageButton)v.findViewById(R.id.go_to_last_post_button);
+                ImageView lockImage = (ImageView)v.findViewById(R.id.lock_image);
+                ImageView stickyImage = (ImageView)v.findViewById(R.id.sticky_image);
+
+                // Get topic
+                Topic topic;
+                if(childBoards.size() > 0)
+                {
+                    topic = topics.get(position - 1);
+                }
+                else
+                {
+                    topic = topics.get(position);
+                }
+
+                // Set stuff for subject
+                topicSubject.setText(topic.getSubject());
+                if(topic.hasUnreadPosts())
+                {
+                    topicSubject.setTypeface(null, Typeface.BOLD);
+                }
+
+                // Set setuff for topic starter
+                topicStarter.setText("Started by: " + topic.getStarter());
+
+                // Set stuff for last post info
+                topicLastPost.setText("Last post: " + topic.getLastPost());
+
+                // TODO: Set stuff for last post jump
+
+                // Set image for locked or sticky
+                stickyImage.setVisibility(topic.isSticky() ? View.GONE : View.VISIBLE);
+                lockImage.setVisibility(topic.isLocked() ? View.GONE : View.VISIBLE);
+
+            }
+            else if(getItemViewType(position) == 0)
+            {
+                // TODO: Set stuff for child boards
+            }
+
+
+
+            return v;
         }
 
         @Override
         public int getItemViewType(int position) {
-            return 0;
+            if(position == 0)
+            {
+                return 0;
+            }
+            else
+                return 1;
         }
 
         @Override
         public int getViewTypeCount() {
-            return 0;
+            return 2;
         }
 
         @Override
@@ -258,7 +386,150 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                     // Gets topics div
                     else if(div.outerHtml().contains("Subject"))
                     {
-                        // TODO: Get topics Stuff
+                        // Get Stickies
+                        Elements stickyTopicCols = div.select("td.windowbg3");
+
+                        // Get Other topics
+                        Elements nonStickyTopicCols = div.select("td.windowbg");
+
+                        // Get last post column
+                        Elements lastPostCols = div.select("td.lastpostcol");
+
+                        // Get starters
+                        Elements starters = div.select("td.windowbg2");
+
+                        int numTopics = 0;
+                        int numStickies = 0;
+                        for(Element topic : stickyTopicCols)
+                        {
+
+                            if(topic.html().contains("<img src=\"https://bitcointalk.org/Themes/custom1/images/icons/show_sticky.gif\""))
+                            {
+                                String subject = topic.text();
+                                int numReplies = 0;
+                                int numViews = 0;
+                                String starter;
+                                boolean locked = false;
+                                boolean hasUnread = false;
+
+                                // Get replies data for stickies
+                                for(Element replies : stickyTopicCols)
+                                {
+                                    if(replies.outerHtml().contains("<td class=\"windowbg3\" valign=\"middle\" width=\"4%\" align=\"center\">")) {
+                                        numReplies = Integer.parseInt(replies.text());
+
+                                        // Get views data for stickies
+                                        for (Element views : stickyTopicCols) {
+                                            if(views.outerHtml().contains("<td class=\"windowbg3\" valign=\"middle\" width=\"4%\" align=\"center\">")) {
+                                                if (Integer.parseInt(views.text()) != numReplies) {
+                                                    numViews = Integer.parseInt(views.text());
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // set views and replies to proper ones
+                                if(numReplies > numViews)
+                                {
+                                    int numRepliesTemp = numViews;
+                                    numViews = numReplies;
+                                    numReplies = numRepliesTemp;
+                                }
+
+                                // Get starter
+                                starter = starters.get(numStickies).text();
+
+                                // Check locked
+                                if(topic.html().contains("<img src=\"https://bitcointalk.org/Themes/custom1/images/icons/quick_lock.gif\""))
+                                {
+                                    locked = true;
+                                }
+
+                                // Check for new
+                                if(topic.html().contains("<img class=\"newimg\" src=\"https://bitcointalk.org/Themes/custom1/images/english/new.gif\" alt=\"New\">"))
+                                {
+                                    hasUnread = true;
+                                }
+
+                                // Get id
+                                long id = Long.parseLong(topic.html().substring(topic.html().indexOf("topic=") + 6, topic.html().indexOf(".", topic.html().indexOf("topic="))));
+
+                                // Get URL
+                                String topicURL = topic.select("span > a[href]").get(0).attr("href");
+
+                                // Create topic object and add to array
+                                Topic topicObj = new Topic(subject, starter, numReplies, numViews, lastPostCols.get(numStickies).text(), true, locked, hasUnread, id);
+                                topicObj.setURL(topicURL);
+                                topics.add(topicObj);
+                                numStickies++;
+                            }
+                        }
+
+                        // Get non sticky topics
+                        numTopics = numStickies;
+                        for(Element topic : nonStickyTopicCols)
+                        {
+                            if(topic.html().contains("msg_"))
+                            {
+                                String subject = topic.text();
+                                int numReplies = 0;
+                                int numViews = 0;
+                                String starter;
+                                boolean locked = false;
+                                boolean hasUnread = false;
+
+                                // Get replies data for stickies
+                                for(Element replies : nonStickyTopicCols)
+                                {
+                                    if(replies.outerHtml().contains("<td class=\"windowbg3\" valign=\"middle\" width=\"4%\" align=\"center\">")) {
+                                        numReplies = Integer.parseInt(replies.text());
+
+                                        // Get views data for stickies
+                                        for (Element views : nonStickyTopicCols) {
+                                            if (Integer.parseInt(views.text()) != numReplies) {
+                                                numViews = Integer.parseInt(views.text());
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // set views and replies to proper ones
+                                if(numReplies > numViews)
+                                {
+                                    int numRepliesTemp = numViews;
+                                    numViews = numReplies;
+                                    numReplies = numRepliesTemp;
+                                }
+
+                                // Get starter
+                                starter = starters.get(numTopics).text();
+
+                                // Check locked
+                                if(topic.html().contains("<img src=\"https://bitcointalk.org/Themes/custom1/images/icons/quick_lock.gif\""))
+                                {
+                                    locked = true;
+                                }
+
+                                // Check for new
+                                if(topic.html().contains("<img class=\"newimg\" src=\"https://bitcointalk.org/Themes/custom1/images/english/new.gif\" alt=\"New\">"))
+                                {
+                                    hasUnread = true;
+                                }
+
+                                // Get id
+                                long id = Long.parseLong(topic.html().substring(topic.html().indexOf("topic=") + 6, topic.html().indexOf(".", topic.html().indexOf("topic="))));
+
+                                // Get URL
+                                String topicURL = topic.select("span > a[href]").get(0).attr("href");
+
+                                // Create topic object and add to array
+                                Topic topicObj = new Topic(subject, starter, numReplies, numViews, lastPostCols.get(numStickies).text(), true, locked, hasUnread, id);
+                                topicObj.setURL(topicURL);
+                                topics.add(topicObj);
+                                numTopics++;
+                            }
+                        }
                     }
                 }
 
@@ -276,6 +547,39 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         @Override
         protected void onPostExecute(final List<List<Object>> result) {
 
+            mGetTopicsTask = null;
+            showProgress(false);
+
+            if (result.size() > 0) {
+                List<Object> childBoards = result.get(0);
+                List<Object> topics = result.get(1);
+                mChildBoards = new ArrayList<Board>();
+                mTopics = new ArrayList<Topic>();
+
+                for (Object childBoard : childBoards) {
+                    mChildBoards.add((Board) childBoard);
+                }
+
+                for (Object topic : topics) {
+                    mTopics.add((Topic) topic);
+                }
+            } else
+            {
+                Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
+                toast.show();
+            }
+
+            CustomListAdapter mListAdp = new CustomListAdapter(mTopics, mChildBoards);
+            mListView.setAdapter(mListAdp);
+
+            mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
+
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    Toast toast = Toast.makeText(getContext(), "CLICKICICICICI", Toast.LENGTH_LONG);
+                    toast.show();
+                }
+            });
         }
     }
 

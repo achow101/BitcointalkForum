@@ -119,8 +119,8 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void ReplaceFragment(String boardURL) {
+    public void ReplaceFragment(String boardURL, String category) {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.container, BoardTopicFragment.newInstance(boardURL)).commit();
+        fragmentManager.beginTransaction().replace(R.id.container, BoardTopicFragment.newInstance(boardURL, sessId, category)).commit();
     }
 }

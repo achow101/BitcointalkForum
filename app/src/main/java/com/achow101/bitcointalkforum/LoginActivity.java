@@ -250,15 +250,14 @@ public class LoginActivity extends Activity{
                 intent.putExtra("SESSION ID", result[2]);
                 startActivity(intent);
             } else {
-                if(result[1].equals("Incorrect Password"))
-                {
+                if (result[1].equals("Incorrect Password")) {
                     mPasswordView.setError("Incorrect Password");
                 }
                 mPasswordView.requestFocus();
-            }
 
-            Toast toast = Toast.makeText(context, result[1], Toast.LENGTH_LONG);
-            toast.show();
+                Toast toast = Toast.makeText(context, result[1], Toast.LENGTH_LONG);
+                toast.show();
+            }
         }
 
         @Override
