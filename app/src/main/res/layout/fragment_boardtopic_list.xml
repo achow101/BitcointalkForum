@@ -5,11 +5,6 @@
              android:layout_height="match_parent"
              tools:context="com.achow101.bitcointalkforum.BoardTopicFragment">
 
-    <ListView
-        android:id="@+id/topics_list"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
-
     <ProgressBar
         style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
@@ -17,5 +12,27 @@
         android:id="@+id/topic_loading_progress"
         android:layout_gravity="center"
         android:visibility="gone"/>
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Next"
+        android:id="@+id/next_topic_page"
+        android:layout_gravity="right|bottom"/>
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Prev"
+        android:id="@+id/prev_topic_page"
+        android:layout_gravity="left|bottom"/>
+
+    <ExpandableListView
+        android:layout_width="wrap_content"
+        android:layout_height="468dp"
+        android:id="@+id/topics_list"
+        android:layout_gravity="center_horizontal|top"/>
 
 </FrameLayout>

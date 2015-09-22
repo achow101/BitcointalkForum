@@ -16,6 +16,9 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AbsListView;
 import android.widget.AdapterView;
+import android.widget.Button;
+import android.widget.ExpandableListAdapter;
+import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
@@ -49,9 +52,8 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
     /**
      * The fragment's ListView/GridView.
      */
-    private AbsListView mListView;
+    private ExpandableListView mListView;
 
-    private ListAdapter mAdapter;
     private List<Board> mChildBoards;
     private List<Topic> mTopics;
     private String mBoardURL;
@@ -59,6 +61,9 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
 
     private GetTopics mGetTopicsTask = null;
     private ProgressBar mProgressView;
+
+    private Button mPrevButton;
+    private Button mNextButton;
 
     public static BoardTopicFragment newInstance(String boardURL, String sessId, String category) {
         BoardTopicFragment fragment = new BoardTopicFragment();
@@ -93,13 +98,17 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         mSessId = getArguments().getString("SessID");
 
         // Get the ListView
-        mListView = (ListView) view.findViewById(R.id.topics_list);
+        mListView = (ExpandableListView) view.findViewById(R.id.topics_list);
         mProgressView = (ProgressBar) view.findViewById(R.id.topic_loading_progress);
 
         // Get the topics from Bitcointalk
         showProgress(true);
         mGetTopicsTask = new GetTopics(mSessId, mBoardURL, getArguments().getString("Category"));
         mGetTopicsTask.execute((Void) null);
+
+        // get buttons
+        mPrevButton = (Button)view.findViewById(R.id.prev_topic_page);
+        mNextButton = (Button)view.findViewById(R.id.next_topic_page);
 
         return view;
     }
@@ -179,7 +188,7 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         public void onChildBoardSelected(String boardURL);
     }
 
-    public class CustomListAdapter implements ListAdapter
+    public class CustomListAdapter implements ExpandableListAdapter
     {
         private List<Topic> topics;
         private List<Board> childBoards;
@@ -196,11 +205,6 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         }
 
         @Override
-        public boolean isEnabled(int position) {
-            return true;
-        }
-
-        @Override
         public void registerDataSetObserver(DataSetObserver observer) {
 
         }
@@ -211,29 +215,70 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         }
 
         @Override
-        public int getCount() {
-            return childBoards.size() + 1;
+        public int getGroupCount() {
+            return topics.size() + 1;
         }
 
         @Override
-        public Object getItem(int position) {
-            if (position == 1) {
-                return childBoards;
-            } else
+        public int getChildrenCount(int groupPosition) {
+            if(groupPosition == 0)
             {
-                return topics.get(position + 1);
+                return childBoards.size();
+            }
+            else
+                return 0;
+        }
+
+        @Override
+        public Object getGroup(int groupPosition) {
+            if(childBoards.size() > 0)
+            {
+                if(groupPosition == 0)
+                {
+                    return childBoards;
+                }
+                else
+                    return topics.get(groupPosition - 1);
+            }
+            else
+            {
+                return topics.get(groupPosition);
             }
         }
 
         @Override
-        public long getItemId(int position) {
-            if(position == 0)
+        public Object getChild(int groupPosition, int childPosition) {
+            if(groupPosition == 0)
+            {
+                return childBoards.get(childPosition);
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        @Override
+        public long getGroupId(int groupPosition) {
+            if(groupPosition == 0)
             {
                 return 0;
             }
             else
             {
-                return topics.get(position).getId();
+                return topics.get(groupPosition).getId();
+            }
+        }
+
+        @Override
+        public long getChildId(int groupPosition, int childPosition) {
+            if(groupPosition == 0)
+            {
+                return childBoards.get(childPosition).getId();
+            }
+            else
+            {
+                return 0;
             }
         }
 
@@ -243,19 +288,21 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         }
 
         @Override
-        public View getView(int position, View convertView, ViewGroup parent) {
-            View v = convertView;
-            if (v == null && getItemViewType(position) == 1) {
+        public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
+            View v = null;
+            if(groupPosition == 0 && childBoards.size() > 0)
+            {
+                LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                v = infalInflater.inflate(R.layout.category_layout, null);
+
+                TextView topicSubject = (TextView)v.findViewById(R.id.cat_title);
+                topicSubject.setText("Child Boards");
+            }
+            else
+            {
                 LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 v = infalInflater.inflate(R.layout.topic_in_list_layout, null);
-            }
-            if(v == null && getItemViewType(position) == 0)
-            {
-                LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                v = infalInflater.inflate(R.layout.child_board_layout, null);
-            }
-            if(getItemViewType(position) == 1)
-            {
+
                 // Get layout stuff
                 TextView topicSubject = (TextView)v.findViewById(R.id.topic_list_title);
                 TextView topicStarter = (TextView)v.findViewById(R.id.topic_starter);
@@ -268,11 +315,11 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                 Topic topic;
                 if(childBoards.size() > 0)
                 {
-                    topic = topics.get(position - 1);
+                    topic = topics.get(groupPosition - 1);
                 }
                 else
                 {
-                    topic = topics.get(position);
+                    topic = topics.get(groupPosition);
                 }
 
                 // Set stuff for subject
@@ -280,6 +327,10 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                 if(topic.hasUnreadPosts())
                 {
                     topicSubject.setTypeface(null, Typeface.BOLD);
+                }
+                else
+                {
+                    topicSubject.setTypeface(null, Typeface.NORMAL);
                 }
 
                 // Set setuff for topic starter
@@ -291,38 +342,76 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                 // TODO: Set stuff for last post jump
 
                 // Set image for locked or sticky
-                stickyImage.setVisibility(topic.isSticky() ? View.GONE : View.VISIBLE);
-                lockImage.setVisibility(topic.isLocked() ? View.GONE : View.VISIBLE);
+                if(topic.isLocked())
+                {
+                    lockImage.setVisibility(View.VISIBLE);
+                }
+                if(topic.isSticky())
+                {
+                    stickyImage.setVisibility(View.VISIBLE);
+                }
+                else
+                {
+                    lockImage.setVisibility(View.INVISIBLE);
+                    stickyImage.setVisibility(View.INVISIBLE);
+                }
 
             }
-            else if(getItemViewType(position) == 0)
-            {
-                // TODO: Set stuff for child boards
-            }
-
-
-
             return v;
         }
 
         @Override
-        public int getItemViewType(int position) {
-            if(position == 0)
+        public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
+            if(groupPosition == 0)
             {
-                return 0;
+                View v = convertView;
+                if(v == null)
+                {
+                    LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                    v = infalInflater.inflate(R.layout.board_list_layout, null);
+                }
+                TextView boardTitle = (TextView)v.findViewById(R.id.board_title);
+                boardTitle.setText(childBoards.get(childPosition).getName());
+
+                return v;
             }
             else
-                return 1;
+                return null;
         }
 
         @Override
-        public int getViewTypeCount() {
-            return 2;
+        public boolean isChildSelectable(int groupPosition, int childPosition) {
+            if(groupPosition == 0)
+            {
+                return true;
+            }
+            else
+                return false;
         }
 
         @Override
         public boolean isEmpty() {
             return false;
+        }
+
+        @Override
+        public void onGroupExpanded(int groupPosition) {
+
+        }
+
+        @Override
+        public void onGroupCollapsed(int groupPosition) {
+
+        }
+
+        @Override
+        public long getCombinedChildId(long groupId, long childId) {
+            return 0;
+        }
+
+        @Override
+        public long getCombinedGroupId(long groupId) {
+            return 0;
         }
     }
 
@@ -396,7 +485,7 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                         Elements lastPostCols = div.select("td.lastpostcol");
 
                         // Get starters
-                        Elements starters = div.select("td.windowbg2");
+                        Elements starters = div.select("[class=windowbg2]");
 
                         int numTopics = 0;
                         int numStickies = 0;
@@ -406,36 +495,18 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                             if(topic.html().contains("<img src=\"https://bitcointalk.org/Themes/custom1/images/icons/show_sticky.gif\""))
                             {
                                 String subject = topic.text();
+
+                                // Get only the subject
+                                if(subject.contains("«"))
+                                {
+                                    subject = subject.substring(0, subject.indexOf(" «"));
+                                }
+
                                 int numReplies = 0;
                                 int numViews = 0;
                                 String starter;
                                 boolean locked = false;
                                 boolean hasUnread = false;
-
-                                // Get replies data for stickies
-                                for(Element replies : stickyTopicCols)
-                                {
-                                    if(replies.outerHtml().contains("<td class=\"windowbg3\" valign=\"middle\" width=\"4%\" align=\"center\">")) {
-                                        numReplies = Integer.parseInt(replies.text());
-
-                                        // Get views data for stickies
-                                        for (Element views : stickyTopicCols) {
-                                            if(views.outerHtml().contains("<td class=\"windowbg3\" valign=\"middle\" width=\"4%\" align=\"center\">")) {
-                                                if (Integer.parseInt(views.text()) != numReplies) {
-                                                    numViews = Integer.parseInt(views.text());
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // set views and replies to proper ones
-                                if(numReplies > numViews)
-                                {
-                                    int numRepliesTemp = numViews;
-                                    numViews = numReplies;
-                                    numReplies = numRepliesTemp;
-                                }
 
                                 // Get starter
                                 starter = starters.get(numStickies).text();
@@ -473,34 +544,18 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                             if(topic.html().contains("msg_"))
                             {
                                 String subject = topic.text();
+
+                                // Get only the subject
+                                if(subject.contains("«"))
+                                {
+                                    subject = subject.substring(0, subject.indexOf(" «"));
+                                }
+
                                 int numReplies = 0;
                                 int numViews = 0;
                                 String starter;
                                 boolean locked = false;
                                 boolean hasUnread = false;
-
-                                // Get replies data for stickies
-                                for(Element replies : nonStickyTopicCols)
-                                {
-                                    if(replies.outerHtml().contains("<td class=\"windowbg3\" valign=\"middle\" width=\"4%\" align=\"center\">")) {
-                                        numReplies = Integer.parseInt(replies.text());
-
-                                        // Get views data for stickies
-                                        for (Element views : nonStickyTopicCols) {
-                                            if (Integer.parseInt(views.text()) != numReplies) {
-                                                numViews = Integer.parseInt(views.text());
-                                            }
-                                        }
-                                    }
-                                }
-
-                                // set views and replies to proper ones
-                                if(numReplies > numViews)
-                                {
-                                    int numRepliesTemp = numViews;
-                                    numViews = numReplies;
-                                    numReplies = numRepliesTemp;
-                                }
 
                                 // Get starter
                                 starter = starters.get(numTopics).text();
@@ -524,7 +579,7 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                                 String topicURL = topic.select("span > a[href]").get(0).attr("href");
 
                                 // Create topic object and add to array
-                                Topic topicObj = new Topic(subject, starter, numReplies, numViews, lastPostCols.get(numStickies).text(), true, locked, hasUnread, id);
+                                Topic topicObj = new Topic(subject, starter, numReplies, numViews, lastPostCols.get(numTopics).text(), false, locked, hasUnread, id);
                                 topicObj.setURL(topicURL);
                                 topics.add(topicObj);
                                 numTopics++;
@@ -563,6 +618,21 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                 for (Object topic : topics) {
                     mTopics.add((Topic) topic);
                 }
+
+                if(mTopics.get(0).getUrl().contains(".0"))
+                {
+                    mPrevButton.setClickable(false);
+                }
+                else if(mTopics.size() < 40)
+                {
+                    mNextButton.setClickable(false);
+                }
+                else
+                {
+                    mPrevButton.setClickable(true);
+                    mPrevButton.setClickable(true);
+                }
+
             } else
             {
                 Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
@@ -572,14 +642,33 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
             CustomListAdapter mListAdp = new CustomListAdapter(mTopics, mChildBoards);
             mListView.setAdapter(mListAdp);
 
-            mListView.setOnItemClickListener(new ListView.OnItemClickListener() {
-
+            mListView.setOnGroupClickListener(new ExpandableListView.OnGroupClickListener() {
                 @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    Toast toast = Toast.makeText(getContext(), "CLICKICICICICI", Toast.LENGTH_LONG);
-                    toast.show();
+                public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id) {
+                    if (mChildBoards.size() > 0 && groupPosition == 0) {
+                        return true;
+                    } else {
+                        // TODO: stuff to show that topic
+                        return false;
+                    }
                 }
             });
+
+            mListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+                @Override
+                public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+                    // TODO: Callback stuff to replace fragment with another topic list.
+
+                    return true;
+                }
+            });
+
+        }
+
+        @Override
+        protected void onCancelled() {
+            mGetTopicsTask = null;
+            showProgress(false);
         }
     }
 

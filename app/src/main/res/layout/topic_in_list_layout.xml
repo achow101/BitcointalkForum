@@ -46,19 +46,20 @@
         android:layout_height="wrap_content"
         android:id="@+id/lock_image"
         android:layout_above="@+id/go_to_last_post_button"
-        android:layout_alignParentRight="true"
+        android:layout_alignParentRight="false"
         android:layout_alignParentEnd="true"
-        android:visibility="visible"
+        android:visibility="invisible"
         android:contextClickable="false"
-        android:src="@drawable/quick_lock"/>
+        android:src="@drawable/quick_lock"
+        android:layout_alignParentLeft="false"/>
 
     <ImageView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/sticky_image"
-        android:visibility="visible"
+        android:visibility="invisible"
         android:src="@drawable/quick_sticky"
-        android:layout_above="@+id/go_to_last_post_button"
+        android:layout_below="@+id/topic_list_title"
         android:layout_toLeftOf="@+id/lock_image"
         android:layout_toStartOf="@+id/lock_image"/>
 
