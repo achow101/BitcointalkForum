@@ -17,6 +17,7 @@ public class Topic {
     private boolean hasUnread;
     private String URL;
     private long id;
+    private String lastPostURL;
 
     public Topic(String subject, String starter, int replies, int views, String lastPost, boolean sticky, boolean locked, boolean hasUnread, long id) {
         this.subject = subject;
@@ -81,5 +82,15 @@ public class Topic {
     public long getId()
     {
         return id;
+    }
+
+    public void setLastPostURL(String lastPostURL)
+    {
+        this.lastPostURL = lastPostURL;
+    }
+
+    public String getLastPostURL()
+    {
+        return lastPostURL;
     }
 }

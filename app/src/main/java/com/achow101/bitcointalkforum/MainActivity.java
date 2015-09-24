@@ -8,11 +8,13 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity
-        implements NavigationDrawerFragment.NavigationDrawerCallbacks, HomeFragment.GoToBoard {
+public class MainActivity extends AppCompatActivity implements NavigationDrawerFragment.NavigationDrawerCallbacks,
+        HomeFragment.GoToBoard,
+        BoardTopicFragment.OnTopicListInteraction {
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -119,9 +121,21 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void ReplaceFragment(String boardURL, String category) {
+    public void OnBoardSelected(String boardURL, String category) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.container, BoardTopicFragment.newInstance(boardURL, sessId, category)).commit();
     }
 
+    @Override
+    public void onTopicSelected(String topicURL) {
+        // TODO: Create fragment and code for scraping and displaying a topic
+        Toast toast = Toast.makeText(getApplicationContext(), "Topic clicked. URL: " + topicURL, Toast.LENGTH_LONG);
+        toast.show();
+    }
+
+    @Override
+    public void onChildBoardSelected(String boardURL, String category) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, BoardTopicFragment.newInstance(boardURL, sessId, category)).commit();
+    }
 }

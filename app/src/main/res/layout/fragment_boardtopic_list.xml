@@ -29,9 +29,9 @@
         android:id="@+id/prev_topic_page"
         android:layout_gravity="left|bottom"/>
 
-    <ExpandableListView
+    <ListView
         android:layout_width="wrap_content"
-        android:layout_height="468dp"
+        android:layout_height="472dp"
         android:id="@+id/topics_list"
         android:layout_gravity="center_horizontal|top"/>
 

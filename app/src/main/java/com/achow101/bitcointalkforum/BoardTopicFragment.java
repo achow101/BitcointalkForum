@@ -14,7 +14,6 @@ import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ExpandableListAdapter;
@@ -42,17 +41,17 @@ import java.util.List;
  * Large screen devices (such as tablets) are supported by replacing the ListView
  * with a GridView.
  * <p/>
- * Activities containing this fragment MUST implement the {@link OnListInteraction}
+ * Activities containing this fragment MUST implement the {@link OnTopicListInteraction}
  * interface.
  */
-public class BoardTopicFragment extends Fragment implements AbsListView.OnItemClickListener {
+public class BoardTopicFragment extends Fragment {
 
-    private OnListInteraction mListener;
+    private OnTopicListInteraction mListener;
 
     /**
      * The fragment's ListView/GridView.
      */
-    private ExpandableListView mListView;
+    private ListView mListView;
 
     private List<Board> mChildBoards;
     private List<Topic> mTopics;
@@ -64,6 +63,9 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
 
     private Button mPrevButton;
     private Button mNextButton;
+
+    private String mNextPageURL;
+    private String mPrevPageURL;
 
     public static BoardTopicFragment newInstance(String boardURL, String sessId, String category) {
         BoardTopicFragment fragment = new BoardTopicFragment();
@@ -98,78 +100,46 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         mSessId = getArguments().getString("SessID");
 
         // Get the ListView
-        mListView = (ExpandableListView) view.findViewById(R.id.topics_list);
+        mListView = (ListView) view.findViewById(R.id.topics_list);
         mProgressView = (ProgressBar) view.findViewById(R.id.topic_loading_progress);
+
+        // get buttons
+        mPrevButton = (Button)view.findViewById(R.id.prev_topic_page);
+        mNextButton = (Button)view.findViewById(R.id.next_topic_page);
 
         // Get the topics from Bitcointalk
         showProgress(true);
         mGetTopicsTask = new GetTopics(mSessId, mBoardURL, getArguments().getString("Category"));
         mGetTopicsTask.execute((Void) null);
 
-        // get buttons
-        mPrevButton = (Button)view.findViewById(R.id.prev_topic_page);
-        mNextButton = (Button)view.findViewById(R.id.next_topic_page);
-
         return view;
     }
 
     /**
-     * Shows the progress UI and hides the login form.
+     * Shows the progress UI and hides list and buttons
      */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB_MR2)
     public void showProgress(final boolean show) {
-        // On Honeycomb MR2 we have the ViewPropertyAnimator APIs, which allow
-        // for very easy animations. If available, use these APIs to fade-in
-        // the progress spinner.
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB_MR2) {
-            int shortAnimTime = getResources().getInteger(android.R.integer.config_shortAnimTime);
-
-            mListView.setVisibility(show ? View.GONE : View.VISIBLE);
-            mListView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 0 : 1).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mListView.setVisibility(show ? View.GONE : View.VISIBLE);
-                }
-            });
-
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mProgressView.animate().setDuration(shortAnimTime).alpha(
-                    show ? 1 : 0).setListener(new AnimatorListenerAdapter() {
-                @Override
-                public void onAnimationEnd(Animator animation) {
-                    mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-                }
-            });
-        } else {
-            // The ViewPropertyAnimator APIs are not available, so simply show
-            // and hide the relevant UI components.
-            mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
-            mListView.setVisibility(show ? View.GONE : View.VISIBLE);
-        }
+        // Show and hide ui stuff
+        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+        mListView.setVisibility(show ? View.GONE : View.VISIBLE);
+        mPrevButton.setVisibility(show ? View.GONE : View.VISIBLE);
+        mNextButton.setVisibility(show ? View.GONE : View.VISIBLE);
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        /*try {
-            mListener = (OnListInteraction) activity;
+        try {
+            mListener = (OnTopicListInteraction) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnListInteraction");
-        }*/
+            throw new ClassCastException(activity.toString() + " must implement OnTopicListInteraction");
+        }
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
         mListener = null;
-    }
-
-    @Override
-    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-        if (null != mListener) {
-        }
     }
 
     /**
@@ -182,121 +152,37 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
      * "http://developer.android.com/training/basics/fragments/communicating.html"
      * >Communicating with Other Fragments</a> for more information.
      */
-    public interface OnListInteraction {
+    public interface OnTopicListInteraction {
 
         public void onTopicSelected(String topicURL);
-        public void onChildBoardSelected(String boardURL);
+        public void onChildBoardSelected(String boardURL, String category);
     }
 
-    public class CustomListAdapter implements ExpandableListAdapter
+    public class CustomListAdapter implements ListAdapter
     {
         private List<Topic> topics;
         private List<Board> childBoards;
+        private List<Object> everything;
 
         public CustomListAdapter(List<Topic> topics, List<Board> childBoards)
         {
             this.topics = topics;
             this.childBoards = childBoards;
+            everything = new ArrayList<Object>();
+            everything.addAll(childBoards);
+            everything.addAll(topics);
         }
 
         @Override
-        public boolean areAllItemsEnabled() {
-            return true;
-        }
-
-        @Override
-        public void registerDataSetObserver(DataSetObserver observer) {
-
-        }
-
-        @Override
-        public void unregisterDataSetObserver(DataSetObserver observer) {
-
-        }
-
-        @Override
-        public int getGroupCount() {
-            return topics.size() + 1;
-        }
-
-        @Override
-        public int getChildrenCount(int groupPosition) {
-            if(groupPosition == 0)
-            {
-                return childBoards.size();
-            }
-            else
-                return 0;
-        }
-
-        @Override
-        public Object getGroup(int groupPosition) {
-            if(childBoards.size() > 0)
-            {
-                if(groupPosition == 0)
-                {
-                    return childBoards;
-                }
-                else
-                    return topics.get(groupPosition - 1);
-            }
-            else
-            {
-                return topics.get(groupPosition);
-            }
-        }
-
-        @Override
-        public Object getChild(int groupPosition, int childPosition) {
-            if(groupPosition == 0)
-            {
-                return childBoards.get(childPosition);
-            }
-            else
-            {
-                return null;
-            }
-        }
-
-        @Override
-        public long getGroupId(int groupPosition) {
-            if(groupPosition == 0)
-            {
-                return 0;
-            }
-            else
-            {
-                return topics.get(groupPosition).getId();
-            }
-        }
-
-        @Override
-        public long getChildId(int groupPosition, int childPosition) {
-            if(groupPosition == 0)
-            {
-                return childBoards.get(childPosition).getId();
-            }
-            else
-            {
-                return 0;
-            }
-        }
-
-        @Override
-        public boolean hasStableIds() {
-            return false;
-        }
-
-        @Override
-        public View getGroupView(int groupPosition, boolean isExpanded, View convertView, ViewGroup parent) {
+        public View getView(int position, View convertView, ViewGroup parent) {
             View v = null;
-            if(groupPosition == 0 && childBoards.size() > 0)
+            if(position < childBoards.size())
             {
                 LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                v = infalInflater.inflate(R.layout.category_layout, null);
+                v = infalInflater.inflate(R.layout.board_list_layout, null);
 
-                TextView topicSubject = (TextView)v.findViewById(R.id.cat_title);
-                topicSubject.setText("Child Boards");
+                TextView topicSubject = (TextView)v.findViewById(R.id.board_title);
+                topicSubject.setText(childBoards.get(position).getName());
             }
             else
             {
@@ -311,16 +197,12 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                 ImageView lockImage = (ImageView)v.findViewById(R.id.lock_image);
                 ImageView stickyImage = (ImageView)v.findViewById(R.id.sticky_image);
 
+                // Reset stuff
+                lockImage.setVisibility(View.INVISIBLE);
+                stickyImage.setVisibility(View.INVISIBLE);
+
                 // Get topic
-                Topic topic;
-                if(childBoards.size() > 0)
-                {
-                    topic = topics.get(groupPosition - 1);
-                }
-                else
-                {
-                    topic = topics.get(groupPosition);
-                }
+                final Topic topic = topics.get(position - childBoards.size());
 
                 // Set stuff for subject
                 topicSubject.setText(topic.getSubject());
@@ -339,7 +221,14 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                 // Set stuff for last post info
                 topicLastPost.setText("Last post: " + topic.getLastPost());
 
-                // TODO: Set stuff for last post jump
+                // Set onclicklistener for last post button
+                goToLastPost.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Toast toast = Toast.makeText(getContext(), "Go To Last Post Clicked. URL: " + topic.getLastPostURL(), Toast.LENGTH_LONG);
+                        toast.show();
+                    }
+                });
 
                 // Set image for locked or sticky
                 if(topic.isLocked())
@@ -350,68 +239,78 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                 {
                     stickyImage.setVisibility(View.VISIBLE);
                 }
-                else
-                {
-                    lockImage.setVisibility(View.INVISIBLE);
-                    stickyImage.setVisibility(View.INVISIBLE);
-                }
 
             }
             return v;
         }
 
         @Override
-        public View getChildView(int groupPosition, int childPosition, boolean isLastChild, View convertView, ViewGroup parent) {
-            if(groupPosition == 0)
-            {
-                View v = convertView;
-                if(v == null)
-                {
-                    LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-                    v = infalInflater.inflate(R.layout.board_list_layout, null);
-                }
-                TextView boardTitle = (TextView)v.findViewById(R.id.board_title);
-                boardTitle.setText(childBoards.get(childPosition).getName());
-
-                return v;
-            }
-            else
-                return null;
+        public boolean areAllItemsEnabled() {
+            return true;
         }
 
         @Override
-        public boolean isChildSelectable(int groupPosition, int childPosition) {
-            if(groupPosition == 0)
+        public boolean isEnabled(int position) {
+            return true;
+        }
+
+        @Override
+        public void registerDataSetObserver(DataSetObserver observer) {
+
+        }
+
+        @Override
+        public void unregisterDataSetObserver(DataSetObserver observer) {
+
+        }
+
+        @Override
+        public int getCount() {
+            return childBoards.size() + topics.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return everything.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            if(position < childBoards.size())
             {
-                return true;
+                return childBoards.get(position).getId();
             }
             else
-                return false;
+            {
+                return topics.get(position - childBoards.size()).getId();
+            }
+        }
+
+        @Override
+        public boolean hasStableIds() {
+            return true;
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            if(position < childBoards.size())
+            {
+                return 0;
+            }
+            else
+            {
+                return 1;
+            }
+        }
+
+        @Override
+        public int getViewTypeCount() {
+            return 2;
         }
 
         @Override
         public boolean isEmpty() {
             return false;
-        }
-
-        @Override
-        public void onGroupExpanded(int groupPosition) {
-
-        }
-
-        @Override
-        public void onGroupCollapsed(int groupPosition) {
-
-        }
-
-        @Override
-        public long getCombinedChildId(long groupId, long childId) {
-            return 0;
-        }
-
-        @Override
-        public long getCombinedGroupId(long groupId) {
-            return 0;
         }
     }
 
@@ -433,12 +332,26 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
         {
             List<Object> topics = new ArrayList<Object>();
             List<Object> childBoards = new ArrayList<Object>();
+            List<Object> nextPrevPageURLS = new ArrayList<Object>();
             try {
                 // Retrieve the page
                 Document doc = Jsoup.connect(boardURL).cookie("PHPSESSID", mSessId).get();
 
                 // Retrieve the body area of the page
                 Element body = doc.getElementById("bodyarea");
+
+                // Get prevPageURL
+                Elements prevnexts = body.select("#toppages > span.prevnext > a.navPages");
+                for(Element prevnext : prevnexts)
+                {
+                    switch(prevnext.text())
+                    {
+                        case "«": nextPrevPageURLS.add(prevnext.attr("href"));
+                            break;
+                        case "»": nextPrevPageURLS.add(prevnext.attr("href"));
+                            break;
+                    }
+                }
 
                 // Get the divs for Child Boards and topics
                 Elements bodyDivs = body.select("div.tborder");
@@ -466,6 +379,7 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                                     int startInx = boardStr.indexOf("board=") + 6;
                                     int endInx = startInx + 1;
                                     Board board = new Board(boardTitle.text(), mCategory, Integer.parseInt(boardStr.substring(startInx, endInx)), childBoards.size());
+                                    board.setURL(boardTitle.attr("href"));
                                     childBoards.add(board);
                                 }
                             }
@@ -529,9 +443,13 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                                 // Get URL
                                 String topicURL = topic.select("span > a[href]").get(0).attr("href");
 
+                                // Get Last post URL
+                                String lastPostURL = lastPostCols.get(numStickies).select("a[href]").attr("href");
+
                                 // Create topic object and add to array
                                 Topic topicObj = new Topic(subject, starter, numReplies, numViews, lastPostCols.get(numStickies).text(), true, locked, hasUnread, id);
                                 topicObj.setURL(topicURL);
+                                topicObj.setLastPostURL(lastPostURL);
                                 topics.add(topicObj);
                                 numStickies++;
                             }
@@ -578,9 +496,13 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                                 // Get URL
                                 String topicURL = topic.select("span > a[href]").get(0).attr("href");
 
+                                // Get Last post URL
+                                String lastPostURL = lastPostCols.get(numTopics).select("a[href]").attr("href");
+
                                 // Create topic object and add to array
                                 Topic topicObj = new Topic(subject, starter, numReplies, numViews, lastPostCols.get(numTopics).text(), false, locked, hasUnread, id);
                                 topicObj.setURL(topicURL);
+                                topicObj.setLastPostURL(lastPostURL);
                                 topics.add(topicObj);
                                 numTopics++;
                             }
@@ -595,6 +517,7 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
             List<List<Object>> out = new ArrayList<List<Object>>();
             out.add(childBoards);
             out.add(topics);
+            out.add(nextPrevPageURLS);
 
             return out;
         }
@@ -608,6 +531,7 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
             if (result.size() > 0) {
                 List<Object> childBoards = result.get(0);
                 List<Object> topics = result.get(1);
+                final List<Object> prevNextURLs = result.get(2);
                 mChildBoards = new ArrayList<Board>();
                 mTopics = new ArrayList<Topic>();
 
@@ -619,18 +543,42 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
                     mTopics.add((Topic) topic);
                 }
 
-                if(mTopics.get(0).getUrl().contains(".0"))
+                if(mBoardURL.contains(".0"))
                 {
                     mPrevButton.setClickable(false);
+                    mNextButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onChildBoardSelected((String) prevNextURLs.get(0), mCategory);
+                        }
+                    });
                 }
                 else if(mTopics.size() < 40)
                 {
                     mNextButton.setClickable(false);
+                    mPrevButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onChildBoardSelected((String) prevNextURLs.get(0), mCategory);
+                        }
+                    });
                 }
                 else
                 {
                     mPrevButton.setClickable(true);
-                    mPrevButton.setClickable(true);
+                    mNextButton.setClickable(true);
+                    mPrevButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onChildBoardSelected((String) prevNextURLs.get(0), mCategory);
+                        }
+                    });
+                    mNextButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onChildBoardSelected((String) prevNextURLs.get(1), mCategory);
+                        }
+                    });
                 }
 
             } else
@@ -642,24 +590,17 @@ public class BoardTopicFragment extends Fragment implements AbsListView.OnItemCl
             CustomListAdapter mListAdp = new CustomListAdapter(mTopics, mChildBoards);
             mListView.setAdapter(mListAdp);
 
-            mListView.setOnGroupClickListener(new ExpandableListView.OnGroupClickListener() {
+            mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
-                public boolean onGroupClick(ExpandableListView parent, View v, int groupPosition, long id) {
-                    if (mChildBoards.size() > 0 && groupPosition == 0) {
-                        return true;
-                    } else {
-                        // TODO: stuff to show that topic
-                        return false;
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    if(position < mChildBoards.size())
+                    {
+                        mListener.onChildBoardSelected(mChildBoards.get(position).getURL(), mChildBoards.get(position).getCategory());
                     }
-                }
-            });
-
-            mListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
-                @Override
-                public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-                    // TODO: Callback stuff to replace fragment with another topic list.
-
-                    return true;
+                    else
+                    {
+                        mListener.onTopicSelected(mTopics.get(position - mChildBoards.size()).getUrl());
+                    }
                 }
             });
 

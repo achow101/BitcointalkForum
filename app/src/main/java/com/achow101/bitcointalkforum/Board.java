@@ -50,4 +50,5 @@ public class Board {
     {
         return url;
     }
+
 }

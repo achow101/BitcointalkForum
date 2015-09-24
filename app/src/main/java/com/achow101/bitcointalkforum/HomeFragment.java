@@ -245,7 +245,7 @@ public class HomeFragment extends Fragment {
                     String boardURL = board.getURL();
 
                     // Replace this fragment with one for the board
-                    mBoardCallback.ReplaceFragment(boardURL, board.getName());
+                    mBoardCallback.OnBoardSelected(boardURL, board.getName());
 
                     return true;
                 }
@@ -386,6 +386,6 @@ public class HomeFragment extends Fragment {
 
     public interface GoToBoard
     {
-        public void ReplaceFragment(String boardURL, String category);
+        public void OnBoardSelected(String boardURL, String category);
     }
 }
