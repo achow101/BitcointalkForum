@@ -35,4 +35,12 @@
         android:id="@+id/topics_list"
         android:layout_gravity="center_horizontal|top"/>
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?android:attr/textAppearanceMedium"
+        android:text="page"
+        android:id="@+id/page_num"
+        android:layout_gravity="center_horizontal|bottom"/>
+
 </FrameLayout>

@@ -62,6 +62,8 @@ public class BoardTopicFragment extends Fragment {
     private Button mPrevButton;
     private Button mNextButton;
 
+    private TextView mPageNumText;
+
     public static BoardTopicFragment newInstance(String boardURL, String sessId, String category) {
         BoardTopicFragment fragment = new BoardTopicFragment();
         Bundle args = new Bundle();
@@ -92,6 +94,7 @@ public class BoardTopicFragment extends Fragment {
         // Get stuff for adapter
         mBoardURL = getArguments().getString("URL");
         mSessId = getArguments().getString("SessID");
+        int pageNum = (Integer.parseInt(mBoardURL.substring(mBoardURL.indexOf(".", mBoardURL.indexOf("board=")) + 1)) / 40) + 1;
 
         // Get the ListView
         mListView = (ListView) view.findViewById(R.id.topics_list);
@@ -100,6 +103,10 @@ public class BoardTopicFragment extends Fragment {
         // get buttons
         mPrevButton = (Button)view.findViewById(R.id.prev_topic_page);
         mNextButton = (Button)view.findViewById(R.id.next_topic_page);
+
+        // Set page number text
+        mPageNumText = (TextView)view.findViewById(R.id.page_num);
+        mPageNumText.setText("Page " + pageNum);
 
         // Get the topics from Bitcointalk
         showProgress(true);
@@ -118,6 +125,7 @@ public class BoardTopicFragment extends Fragment {
         mListView.setVisibility(show ? View.GONE : View.VISIBLE);
         mPrevButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mNextButton.setVisibility(show ? View.GONE : View.VISIBLE);
+        mPageNumText.setVisibility(show ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -539,6 +547,7 @@ public class BoardTopicFragment extends Fragment {
                 if(mBoardURL.contains(".0"))
                 {
                     mPrevButton.setClickable(false);
+                    mPrevButton.setVisibility(View.GONE);
                     mNextButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -546,32 +555,32 @@ public class BoardTopicFragment extends Fragment {
                         }
                     });
                 }
-                else if(mTopics.size() < 40)
-                {
-                    mNextButton.setClickable(false);
-                    mPrevButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mListener.onChildBoardSelected((String) prevNextURLs.get(0), mCategory);
-                        }
-                    });
-                }
-                else
-                {
-                    mPrevButton.setClickable(true);
-                    mNextButton.setClickable(true);
-                    mPrevButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mListener.onChildBoardSelected((String) prevNextURLs.get(0), mCategory);
-                        }
-                    });
-                    mNextButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mListener.onChildBoardSelected((String) prevNextURLs.get(1), mCategory);
-                        }
-                    });
+                else {
+                    if (mTopics.size() < 40) {
+                        mNextButton.setClickable(false);
+                        mNextButton.setVisibility(View.GONE);
+                        mPrevButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onChildBoardSelected((String) prevNextURLs.get(0), mCategory);
+                            }
+                        });
+                    } else {
+                        mPrevButton.setClickable(true);
+                        mNextButton.setClickable(true);
+                        mPrevButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onChildBoardSelected((String) prevNextURLs.get(0), mCategory);
+                            }
+                        });
+                        mNextButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onChildBoardSelected((String) prevNextURLs.get(1), mCategory);
+                            }
+                        });
+                    }
                 }
 
             } else
@@ -586,12 +595,9 @@ public class BoardTopicFragment extends Fragment {
             mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    if(position < mChildBoards.size())
-                    {
+                    if (position < mChildBoards.size()) {
                         mListener.onChildBoardSelected(mChildBoards.get(position).getURL(), mChildBoards.get(position).getCategory());
-                    }
-                    else
-                    {
+                    } else {
                         mListener.onTopicSelected(mTopics.get(position - mChildBoards.size()).getUrl());
                     }
                 }

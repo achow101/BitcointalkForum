@@ -52,6 +52,8 @@ public class UnreadPostListsFragment extends Fragment {
 
     private ListView mListView;
 
+    private TextView mPageNumText;
+
     public static UnreadPostListsFragment newInstance(String listURL, String sessID) {
         UnreadPostListsFragment fragment = new UnreadPostListsFragment();
         Bundle args = new Bundle();
@@ -92,6 +94,7 @@ public class UnreadPostListsFragment extends Fragment {
         // Get stuff for adapter
         mSessId = getArguments().getString("Session ID");
         mListURL = getArguments().getString("List URL");
+        int pageNum = (Integer.parseInt(mListURL.substring(mListURL.indexOf("start=") + 6)) / 40) + 1;
 
         // Get the ListView
         mListView = (ListView) view.findViewById(R.id.topics_list);
@@ -100,6 +103,10 @@ public class UnreadPostListsFragment extends Fragment {
         // get buttons
         mPrevButton = (Button)view.findViewById(R.id.prev_topic_page);
         mNextButton = (Button)view.findViewById(R.id.next_topic_page);
+
+        // Set page number text
+        mPageNumText = (TextView)view.findViewById(R.id.page_num);
+        mPageNumText.setText("Page " + pageNum);
 
         // Get the topics from Bitcointalk
         showProgress(true);
@@ -118,6 +125,7 @@ public class UnreadPostListsFragment extends Fragment {
         mListView.setVisibility(show ? View.GONE : View.VISIBLE);
         mPrevButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mNextButton.setVisibility(show ? View.GONE : View.VISIBLE);
+        mPageNumText.setVisibility(show ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -422,6 +430,7 @@ public class UnreadPostListsFragment extends Fragment {
                 if(mListURL.contains("start=0"))
                 {
                     mPrevButton.setClickable(false);
+                    mPrevButton.setVisibility(View.GONE);
                     mNextButton.setOnClickListener(new View.OnClickListener() {
                         @Override
                         public void onClick(View v) {
@@ -429,32 +438,32 @@ public class UnreadPostListsFragment extends Fragment {
                         }
                     });
                 }
-                else if(topics.size() < 40)
-                {
-                    mNextButton.setClickable(false);
-                    mPrevButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mListener.onPrevNextPageSelected((String) prevNextURLs.get(0));
-                        }
-                    });
-                }
-                else
-                {
-                    mPrevButton.setClickable(true);
-                    mNextButton.setClickable(true);
-                    mPrevButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mListener.onPrevNextPageSelected((String) prevNextURLs.get(0));
-                        }
-                    });
-                    mNextButton.setOnClickListener(new View.OnClickListener() {
-                        @Override
-                        public void onClick(View v) {
-                            mListener.onPrevNextPageSelected((String) prevNextURLs.get(1));
-                        }
-                    });
+                else {
+                    if (topics.size() < 40) {
+                        mNextButton.setClickable(false);
+                        mNextButton.setVisibility(View.GONE);
+                        mPrevButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onPrevNextPageSelected((String) prevNextURLs.get(0));
+                            }
+                        });
+                    } else {
+                        mPrevButton.setClickable(true);
+                        mNextButton.setClickable(true);
+                        mPrevButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onPrevNextPageSelected((String) prevNextURLs.get(0));
+                            }
+                        });
+                        mNextButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onPrevNextPageSelected((String) prevNextURLs.get(1));
+                            }
+                        });
+                    }
                 }
 
             } else
