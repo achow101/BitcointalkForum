@@ -1,4 +1,4 @@
-package com.achow101.bitcointalkforum;
+package com.achow101.bitcointalkforum.fragments;
 
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
@@ -19,6 +19,10 @@ import android.widget.ExpandableListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.achow101.bitcointalkforum.R;
+import com.achow101.bitcointalkforum.items.Board;
+import com.achow101.bitcointalkforum.items.ForumCategory;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;

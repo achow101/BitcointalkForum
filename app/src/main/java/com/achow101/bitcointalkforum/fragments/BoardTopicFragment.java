@@ -1,14 +1,10 @@
-package com.achow101.bitcointalkforum;
+package com.achow101.bitcointalkforum.fragments;
 
-import android.animation.Animator;
-import android.animation.AnimatorListenerAdapter;
-import android.annotation.TargetApi;
 import android.app.Activity;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -16,8 +12,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.Button;
-import android.widget.ExpandableListAdapter;
-import android.widget.ExpandableListView;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.ListAdapter;
@@ -25,6 +19,10 @@ import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.achow101.bitcointalkforum.R;
+import com.achow101.bitcointalkforum.items.Board;
+import com.achow101.bitcointalkforum.items.Topic;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -64,9 +62,6 @@ public class BoardTopicFragment extends Fragment {
     private Button mPrevButton;
     private Button mNextButton;
 
-    private String mNextPageURL;
-    private String mPrevPageURL;
-
     public static BoardTopicFragment newInstance(String boardURL, String sessId, String category) {
         BoardTopicFragment fragment = new BoardTopicFragment();
         Bundle args = new Bundle();
@@ -91,8 +86,7 @@ public class BoardTopicFragment extends Fragment {
     }
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.fragment_boardtopic_list, container, false);
 
         // Get stuff for adapter
@@ -340,7 +334,7 @@ public class BoardTopicFragment extends Fragment {
                 // Retrieve the body area of the page
                 Element body = doc.getElementById("bodyarea");
 
-                // Get prevPageURL
+                // Get prev and next page URLs
                 Elements prevnexts = body.select("#toppages > span.prevnext > a.navPages");
                 for(Element prevnext : prevnexts)
                 {
@@ -418,12 +412,11 @@ public class BoardTopicFragment extends Fragment {
 
                                 int numReplies = 0;
                                 int numViews = 0;
-                                String starter;
                                 boolean locked = false;
                                 boolean hasUnread = false;
 
                                 // Get starter
-                                starter = starters.get(numStickies).text();
+                                String starter = starters.get(numStickies).text();
 
                                 // Check locked
                                 if(topic.html().contains("<img src=\"https://bitcointalk.org/Themes/custom1/images/icons/quick_lock.gif\""))

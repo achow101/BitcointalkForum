@@ -1,4 +1,4 @@
-package com.achow101.bitcointalkforum;
+package com.achow101.bitcointalkforum.fragments;
 
 import android.support.v7.app.AppCompatActivity;
 import android.app.Activity;
@@ -21,6 +21,8 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.Toast;
+
+import com.achow101.bitcointalkforum.R;
 
 /**
  * Fragment used for managing interactions for and presentation of a navigation drawer.
@@ -106,10 +108,8 @@ public class NavigationDrawerFragment extends Fragment {
                         getString(R.string.title_unread_posts),
                         getString(R.string.title_new_replies),
                         getString(R.string.title_watchlist),
-                        getString(R.string.title_search),
                         getString(R.string.title_profile),
                         getString(R.string.title_messages),
-                        getString(R.string.title_members),
                         getString(R.string.title_logout),
                 }));
         mDrawerListView.setItemChecked(mCurrentSelectedPosition, true);

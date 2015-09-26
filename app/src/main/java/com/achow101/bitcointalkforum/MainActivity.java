@@ -10,11 +10,19 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.achow101.bitcointalkforum.fragments.BoardTopicFragment;
+import com.achow101.bitcointalkforum.fragments.HomeFragment;
+import com.achow101.bitcointalkforum.fragments.NavigationDrawerFragment;
+import com.achow101.bitcointalkforum.fragments.UnreadPostListsFragment;
+import com.achow101.bitcointalkforum.items.Board;
+import com.achow101.bitcointalkforum.items.ForumCategory;
+
 import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements NavigationDrawerFragment.NavigationDrawerCallbacks,
         HomeFragment.GoToBoard,
-        BoardTopicFragment.OnTopicListInteraction {
+        BoardTopicFragment.OnTopicListInteraction,
+        UnreadPostListsFragment.OnUnreadListInteraction {
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -57,28 +65,26 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
             case 0: fragmentManager.beginTransaction().replace(R.id.container, HomeFragment.newInstance(sessId)).commit();
                 break;
             // Unread posts
-            case 1: //TODO: Create fragment for this
+            case 1: fragmentManager.beginTransaction().replace(R.id.container, UnreadPostListsFragment.newInstance("https://bitcointalk.org/index.php?action=unread;start=0", sessId)).commit();
                 break;
             // New replies
-            case 2://TODO: Create fragment for this
+            case 2: fragmentManager.beginTransaction().replace(R.id.container, UnreadPostListsFragment.newInstance("https://bitcointalk.org/index.php?action=unreadreplies;start=0", sessId)).commit();
                 break;
             // Watchlist
-            case 3://TODO: Create fragment for this
-                break;
-            // Search
-            case 4://TODO: Create fragment for this
+            case 3: fragmentManager.beginTransaction().replace(R.id.container, UnreadPostListsFragment.newInstance("https://bitcointalk.org/index.php?action=watchlist;start=0", sessId)).commit();
                 break;
             // Profile
-            case 5://TODO: Create fragment for this
+            case 4://TODO: Create fragment for this
                 break;
             // Messages
-            case 6: //TODO: Create fragment for this
-                break;
-            // Members
-            case 7://TODO: Create fragment for this
+            case 5: //TODO: Create fragment for this
                 break;
             // Logout
-            case 8://TODO: Create fragment for this
+            case 7:
+                Intent intentLogout = new Intent(this,LoginActivity.class);
+                intentLogout.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                startActivity(intentLogout);
+                finish();
                 break;
         }
 
@@ -131,6 +137,12 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         // TODO: Create fragment and code for scraping and displaying a topic
         Toast toast = Toast.makeText(getApplicationContext(), "Topic clicked. URL: " + topicURL, Toast.LENGTH_LONG);
         toast.show();
+    }
+
+    @Override
+    public void onPrevNextPageSelected(String boardURL) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, UnreadPostListsFragment.newInstance(boardURL, sessId)).commit();
     }
 
     @Override

@@ -1,4 +1,6 @@
-package com.achow101.bitcointalkforum;
+package com.achow101.bitcointalkforum.items;
+
+import com.achow101.bitcointalkforum.items.Board;
 
 import java.util.List;
 

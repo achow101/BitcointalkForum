@@ -1,4 +1,4 @@
-package com.achow101.bitcointalkforum;
+package com.achow101.bitcointalkforum.items;
 
 import java.net.URL;
 

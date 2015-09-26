@@ -1,4 +1,4 @@
-package com.achow101.bitcointalkforum;
+package com.achow101.bitcointalkforum.items;
 
 import java.util.Date;
 
@@ -18,7 +18,6 @@ public class Topic {
     private String URL;
     private long id;
     private String lastPostURL;
-
     public Topic(String subject, String starter, int replies, int views, String lastPost, boolean sticky, boolean locked, boolean hasUnread, long id) {
         this.subject = subject;
         this.starter = starter;
