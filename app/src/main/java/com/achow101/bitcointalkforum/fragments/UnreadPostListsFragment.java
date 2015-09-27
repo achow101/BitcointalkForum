@@ -134,11 +134,11 @@ public class UnreadPostListsFragment extends Fragment {
         mListener = null;
     }
 
-    private class CustomListAdapter implements ListAdapter
+    private class UnreadPostsListAdapter implements ListAdapter
     {
         private List<Topic> mTopics;
 
-        public CustomListAdapter(List<Topic> topics)
+        public UnreadPostsListAdapter(List<Topic> topics)
         {
             this.mTopics = topics;
         }
@@ -472,7 +472,7 @@ public class UnreadPostListsFragment extends Fragment {
                 toast.show();
             }
 
-            CustomListAdapter mListAdp = new CustomListAdapter(topics);
+            UnreadPostsListAdapter mListAdp = new UnreadPostsListAdapter(topics);
             mListView.setAdapter(mListAdp);
 
             mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

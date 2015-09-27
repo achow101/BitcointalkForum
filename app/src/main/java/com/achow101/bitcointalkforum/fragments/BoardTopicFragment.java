@@ -160,13 +160,13 @@ public class BoardTopicFragment extends Fragment {
         public void onChildBoardSelected(String boardURL, String category);
     }
 
-    public class CustomListAdapter implements ListAdapter
+    public class BoardTopicsListAdapter implements ListAdapter
     {
         private List<Topic> topics;
         private List<Board> childBoards;
         private List<Object> everything;
 
-        public CustomListAdapter(List<Topic> topics, List<Board> childBoards)
+        public BoardTopicsListAdapter(List<Topic> topics, List<Board> childBoards)
         {
             this.topics = topics;
             this.childBoards = childBoards;
@@ -589,7 +589,7 @@ public class BoardTopicFragment extends Fragment {
                 toast.show();
             }
 
-            CustomListAdapter mListAdp = new CustomListAdapter(mTopics, mChildBoards);
+            BoardTopicsListAdapter mListAdp = new BoardTopicsListAdapter(mTopics, mChildBoards);
             mListView.setAdapter(mListAdp);
 
             mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {

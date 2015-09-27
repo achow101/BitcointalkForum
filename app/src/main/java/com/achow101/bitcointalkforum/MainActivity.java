@@ -13,6 +13,7 @@ import android.widget.Toast;
 import com.achow101.bitcointalkforum.fragments.BoardTopicFragment;
 import com.achow101.bitcointalkforum.fragments.HomeFragment;
 import com.achow101.bitcointalkforum.fragments.NavigationDrawerFragment;
+import com.achow101.bitcointalkforum.fragments.TopicFragment;
 import com.achow101.bitcointalkforum.fragments.UnreadPostListsFragment;
 import com.achow101.bitcointalkforum.items.Board;
 import com.achow101.bitcointalkforum.items.ForumCategory;
@@ -126,6 +127,8 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         return super.onOptionsItemSelected(item);
     }
 
+    // TODO: Need to add caching forum pages
+
     @Override
     public void OnBoardSelected(String boardURL, String category) {
         FragmentManager fragmentManager = getSupportFragmentManager();
@@ -134,9 +137,8 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
     @Override
     public void onTopicSelected(String topicURL) {
-        // TODO: Create fragment and code for scraping and displaying a topic
-        Toast toast = Toast.makeText(getApplicationContext(), "Topic clicked. URL: " + topicURL, Toast.LENGTH_LONG);
-        toast.show();
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, TopicFragment.newInstance(topicURL, sessId)).commit();
     }
 
     @Override
