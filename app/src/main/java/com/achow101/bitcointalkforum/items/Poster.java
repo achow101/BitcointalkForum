@@ -1,6 +1,7 @@
 package com.achow101.bitcointalkforum.items;
 
 import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
 
 /**
  * Created by Andy on 9/26/2015.
@@ -8,13 +9,13 @@ import android.graphics.Bitmap;
 public class Poster {
 
     private String name;
-    private Bitmap avatar;
+    private BitmapDrawable avatar;
     private String personalText;
     private String activityStr;
     private String rank;
     private String specialPosition = null;
 
-    public Poster(String name, Bitmap avatar, String personalText, String activityStr, String rank)
+    public Poster(String name, BitmapDrawable avatar, String personalText, String activityStr, String rank)
     {
         this.name = name;
         this.avatar = avatar;
@@ -43,7 +44,7 @@ public class Poster {
         return name;
     }
 
-    public Bitmap getAvatar()
+    public BitmapDrawable getAvatar()
     {
         return avatar;
     }

@@ -13,6 +13,7 @@ import android.widget.Toast;
 import com.achow101.bitcointalkforum.fragments.BoardTopicFragment;
 import com.achow101.bitcointalkforum.fragments.HomeFragment;
 import com.achow101.bitcointalkforum.fragments.NavigationDrawerFragment;
+import com.achow101.bitcointalkforum.fragments.ProfileFragment;
 import com.achow101.bitcointalkforum.fragments.TopicFragment;
 import com.achow101.bitcointalkforum.fragments.UnreadPostListsFragment;
 import com.achow101.bitcointalkforum.items.Board;
@@ -75,7 +76,7 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
             case 3: fragmentManager.beginTransaction().replace(R.id.container, UnreadPostListsFragment.newInstance("https://bitcointalk.org/index.php?action=watchlist;start=0", sessId)).commit();
                 break;
             // Profile
-            case 4://TODO: Create fragment for this
+            case 4: fragmentManager.beginTransaction().replace(R.id.container, ProfileFragment.newInstance(sessId)).commit();
                 break;
             // Messages
             case 5: //TODO: Create fragment for this

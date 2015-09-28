@@ -11,6 +11,7 @@ import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.text.Html;
 import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -33,6 +34,8 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -194,7 +197,7 @@ public class TopicFragment extends Fragment {
 
             // Get and set poster avatar image
             ImageView avatar = (ImageView)v.findViewById(R.id.avatar);
-            avatar.setImageBitmap(poster.getAvatar());
+            avatar.setImageDrawable(poster.getAvatar());
 
             // Set special position text
             if(poster.isSpecial())
@@ -247,8 +250,10 @@ public class TopicFragment extends Fragment {
                 }
             }
 
+            // Display the post
             TextView postText = (TextView)v.findViewById(R.id.post);
             postText.setText(post.getPostBody());
+            postText.setMovementMethod(LinkMovementMethod.getInstance());
 
             return v;
         }
@@ -356,16 +361,21 @@ public class TopicFragment extends Fragment {
 
                     // Get poster avatar
                     Elements avatarImgs = posterInfo.select("img.avatar");
-                    Bitmap avatar = null;
+                    BitmapDrawable avatar = null;
                     if(!avatarImgs.isEmpty())
                     {
                         // Get avatar element data
                         Element avatarImg = avatarImgs.first();
                         String avatarURL = avatarImg.absUrl("src");
 
-                        // Download bitmap
-                        InputStream in = new java.net.URL(avatarURL).openStream();
-                        avatar = BitmapFactory.decodeStream(in);
+                        // Download avatar
+                        URL url = new URL(avatarURL);
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setDoInput(true);
+                        connection.connect();
+                        InputStream input = connection.getInputStream();
+                        avatar = new BitmapDrawable(getResources(), input);
+                        avatar.setBounds(0, 0, avatar.getIntrinsicWidth()*100, avatar.getIntrinsicHeight()*100);
                     }
 
                     // Create poster object
@@ -385,8 +395,7 @@ public class TopicFragment extends Fragment {
                     // TODO: add the parsing of quotes and images
 
                     // Get body of post
-                    TextNode postBodyNode = TextNode.createFromEncoded(headerAndPost.select(".post").first().html(), headerAndPost.select(".post").first().baseUri());
-                    String postBodyStr = postBodyNode.getWholeText();
+                    String postBodyStr = headerAndPost.select(".post").first().html();
                     Spanned postBody = Html.fromHtml(postBodyStr, new ImageGetter(), null);
 
                     // Create post object
@@ -409,15 +418,22 @@ public class TopicFragment extends Fragment {
             @Override
             public Drawable getDrawable(String source) {
                 // Download bitmap
-                InputStream in = null;
+                if(!source.contains("bitcointalk.org"))
+                    source = "https://bitcointalk.org" + source;
+                BitmapDrawable bmp = null;
                 try {
-                    in = new java.net.URL(source).openStream();
-                } catch (IOException e) {
+                    URL url = new URL(source);
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setDoInput(true);
+                    connection.connect();
+                    InputStream input = connection.getInputStream();
+                    bmp = new BitmapDrawable(getResources(), input);
+                    bmp.setBounds(0, 0, bmp.getIntrinsicWidth()*10, bmp.getIntrinsicHeight()*10);
+                }
+                catch(Exception e)
+                {
                     e.printStackTrace();
                 }
-                Bitmap img = BitmapFactory.decodeStream(in);
-
-                BitmapDrawable bmp = new BitmapDrawable(getResources(), img);
                 return bmp;
             }
         }
@@ -430,6 +446,12 @@ public class TopicFragment extends Fragment {
 
             PostsListAdapter mAdapter  = new PostsListAdapter(result);
             mListView.setAdapter(mAdapter);
+        }
+
+        @Override
+        protected void onCancelled() {
+            mGetPostsTask = null;
+            showProgress(false);
         }
     }
 

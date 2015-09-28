@@ -101,12 +101,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:id="@+id/avatar"
-            android:layout_toRightOf="@+id/post_time"
             android:layout_toEndOf="@+id/post_time"
-            android:layout_alignTop="@+id/poster"
-            android:layout_below="@+id/personal_text"
-            android:layout_marginTop="0dp"
-            android:layout_gravity="right"/>
+            android:layout_gravity="right"
+            android:layout_below="@+id/div1"
+            android:layout_alignLeft="@+id/personal_text"
+            android:layout_alignStart="@+id/personal_text"/>
 
         <TextView
             android:layout_width="wrap_content"
@@ -114,11 +113,10 @@
             android:textAppearance="?android:attr/textAppearanceSmall"
             android:text="personal text"
             android:id="@+id/personal_text"
-            android:layout_alignBottom="@+id/activity"
-            android:layout_alignLeft="@+id/avatar"
-            android:layout_alignStart="@+id/avatar"
             android:layout_gravity="right"
-            android:layout_marginRight="26dp"/>
+            android:layout_alignBottom="@+id/activity"
+            android:layout_alignRight="@+id/subject_title"
+            android:layout_alignEnd="@+id/subject_title"/>
 
         <View
             android:layout_width="match_parent"
