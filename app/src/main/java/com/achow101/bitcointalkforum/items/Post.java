@@ -16,16 +16,14 @@ import java.util.List;
 public class Post {
 
     private Poster poster;
-    private String postURL;
     private String postedTime;
     private Spanned postBody;
     private String subject;
     private long id;
 
-    public Post(Poster poster, String postURL, String postedTime, String subject, Spanned postBody, long id)
+    public Post(Poster poster, String postedTime, String subject, Spanned postBody, long id)
     {
         this.poster = poster;
-        this.postURL = postURL;
         this.postedTime = postedTime;
         this.postBody = postBody;
         this.subject = subject;
@@ -35,11 +33,6 @@ public class Post {
     public Poster getPoster()
     {
         return poster;
-    }
-
-    public String getPostURL()
-    {
-        return postURL;
     }
 
     public Spanned getPostBody()

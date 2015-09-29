@@ -1,49 +1,64 @@
 package com.achow101.bitcointalkforum.fragments;
 
 import android.app.Activity;
+import android.content.Context;
+import android.database.DataSetObserver;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.app.Fragment;
+import android.support.v4.app.Fragment;
+import android.text.Html;
+import android.text.Spanned;
+import android.text.method.LinkMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.ListAdapter;
+import android.widget.ListView;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+import android.widget.Toast;
 
 import com.achow101.bitcointalkforum.R;
+import com.achow101.bitcointalkforum.items.Post;
+import com.achow101.bitcointalkforum.items.Poster;
 
-/**
- * A simple {@link Fragment} subclass.
- * Activities that contain this fragment must implement the
- * {@link MessagesFragment.OnFragmentInteractionListener} interface
- * to handle interaction events.
- * Use the {@link MessagesFragment#newInstance} factory method to
- * create an instance of this fragment.
- */
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
+
 public class MessagesFragment extends Fragment {
-    // TODO: Rename parameter arguments, choose names that match
-    // the fragment initialization parameters, e.g. ARG_ITEM_NUMBER
-    private static final String ARG_PARAM1 = "param1";
-    private static final String ARG_PARAM2 = "param2";
 
-    // TODO: Rename and change types of parameters
-    private String mParam1;
-    private String mParam2;
+    private int mPageNum;
+    private String mSessId;
 
-    private OnFragmentInteractionListener mListener;
+    private ListView mListView;
+    private ProgressBar mProgressView;
+    private Button mPrevButton;
+    private Button mNextButton;
+    private TextView mPageNumText;
 
-    /**
-     * Use this factory method to create a new instance of
-     * this fragment using the provided parameters.
-     *
-     * @param param1 Parameter 1.
-     * @param param2 Parameter 2.
-     * @return A new instance of fragment MessagesFragment.
-     */
-    // TODO: Rename and change types and number of parameters
-    public static MessagesFragment newInstance(String param1, String param2) {
+    private GetPMs mGetPMsTask;
+
+    private OnPMInteraction mListener;
+
+    public static MessagesFragment newInstance(int page, String sessId) {
         MessagesFragment fragment = new MessagesFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_PARAM1, param1);
-        args.putString(ARG_PARAM2, param2);
+        args.putInt("Page", page);
+        args.putString("Session ID", sessId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -55,34 +70,43 @@ public class MessagesFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        if (getArguments() != null) {
-            mParam1 = getArguments().getString(ARG_PARAM1);
-            mParam2 = getArguments().getString(ARG_PARAM2);
-        }
     }
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
-        return inflater.inflate(R.layout.fragment_messages, container, false);
-    }
+        View v = inflater.inflate(R.layout.fragment_topic, container, false);
 
-    // TODO: Rename method, update argument and hook method into UI event
-    public void onButtonPressed(Uri uri) {
-        if (mListener != null) {
-            mListener.onFragmentInteraction(uri);
-        }
+        // Get arguments
+        mPageNum = getArguments().getInt("Page");
+        mSessId = getArguments().getString("Session ID");
+
+        // Get layout stuff
+        mProgressView = (ProgressBar) v.findViewById(R.id.posts_progress_bar);
+        mListView = (ListView) v.findViewById(R.id.posts_list);
+        mPrevButton = (Button) v.findViewById(R.id.prev_page_button);
+        mNextButton = (Button) v.findViewById(R.id.next_page_button);
+
+        // Set page number
+        mPageNumText = (TextView)v.findViewById(R.id.page_num);
+        mPageNumText.setText("Page " + mPageNum);
+
+        // get pms
+        showProgress(true);
+        mGetPMsTask = new GetPMs("https://bitcointalk.org/index.php?action=pm;f=inbox;sort=date;desc;start=" + ((mPageNum - 1) * 20), mSessId);
+        mGetPMsTask.execute((Void) null);
+
+        return v;
     }
 
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
         try {
-            mListener = (OnFragmentInteractionListener) activity;
+            mListener = (OnPMInteraction) activity;
         } catch (ClassCastException e) {
-            throw new ClassCastException(activity.toString()
-                    + " must implement OnFragmentInteractionListener");
+            throw new ClassCastException(activity.toString() + " must implement OnPMInteraction");
         }
     }
 
@@ -92,19 +116,432 @@ public class MessagesFragment extends Fragment {
         mListener = null;
     }
 
-    /**
-     * This interface must be implemented by activities that contain this
-     * fragment to allow an interaction in this fragment to be communicated
-     * to the activity and potentially other fragments contained in that
-     * activity.
-     * <p/>
-     * See the Android Training lesson <a href=
-     * "http://developer.android.com/training/basics/fragments/communicating.html"
-     * >Communicating with Other Fragments</a> for more information.
-     */
-    public interface OnFragmentInteractionListener {
-        // TODO: Update argument type and name
-        public void onFragmentInteraction(Uri uri);
+    public interface OnPMInteraction {
+
+        public void onPMPageSelected(int page);
+    }
+
+    public void showProgress(final boolean show) {
+        // Show and hide ui stuff
+        mProgressView.setVisibility(show ? View.VISIBLE : View.GONE);
+        mListView.setVisibility(show ? View.GONE : View.VISIBLE);
+        mPrevButton.setVisibility(show ? View.GONE : View.VISIBLE);
+        mNextButton.setVisibility(show ? View.GONE : View.VISIBLE);
+        mPageNumText.setVisibility(show ? View.GONE : View.VISIBLE);
+    }
+
+    private class PostsListAdapter implements ListAdapter
+    {
+        private List<Post> posts;
+
+        public PostsListAdapter(List<Post> posts)
+        {
+            this.posts = posts;
+        }
+
+        @Override
+        public boolean areAllItemsEnabled() {
+            return false;
+        }
+
+        @Override
+        public boolean isEnabled(int position) {
+            return false;
+        }
+
+        @Override
+        public void registerDataSetObserver(DataSetObserver observer) {
+
+        }
+
+        @Override
+        public void unregisterDataSetObserver(DataSetObserver observer) {
+
+        }
+
+        @Override
+        public int getCount() {
+            return posts.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return posts.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return posts.get(position).getId();
+        }
+
+        @Override
+        public boolean hasStableIds() {
+            return true;
+        }
+
+        @Override
+        public View getView(int position, View convertView, ViewGroup parent) {
+            View v = convertView;
+            if(v == null)
+            {
+                LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
+                v = infalInflater.inflate(R.layout.post_layout, null);
+            }
+
+            // Get post and poster
+            Post post = posts.get(position);
+            Poster poster = post.getPoster();
+
+            // Get post text views
+            TextView subjectTitle = (TextView)v.findViewById(R.id.subject_title);
+            TextView postTime = (TextView)v.findViewById(R.id.post_time);
+
+            // Set post text views
+            subjectTitle.setText(post.getSubject());
+            postTime.setText(post.getPostedTime());
+
+            // Get poster text views
+            TextView posterTxt = (TextView)v.findViewById(R.id.poster);
+            TextView rank = (TextView)v.findViewById(R.id.rank);
+            TextView personalText = (TextView)v.findViewById(R.id.personal_text);
+            TextView activity = (TextView)v.findViewById(R.id.activity);
+            TextView specialPos = (TextView)v.findViewById(R.id.spec_pos);
+
+            // set text for poster
+            posterTxt.setText(poster.getName());
+            rank.setText(poster.getRank());
+            activity.setText(poster.getActivityStr());
+            personalText.setText(poster.getPersonalText());
+
+            // Get and set poster avatar image
+            ImageView avatar = (ImageView)v.findViewById(R.id.avatar);
+            avatar.setImageDrawable(poster.getAvatar());
+
+            // Set special position text
+            if(poster.isSpecial())
+                specialPos.setText(poster.getSpecialPos());
+            else
+            {
+                specialPos.setText("");
+                specialPos.setVisibility(View.GONE);
+            }
+
+            // Set rank coins
+            ImageView coins = (ImageView)v.findViewById(R.id.coins);
+            if(poster.isSpecial() && !poster.getSpecialPos().equals("Staff"))
+            {
+                switch(poster.getSpecialPos())
+                {
+                    case "Administrator": coins.setImageResource(R.drawable.admin);
+                        break;
+                    case "Global Moderator": coins.setImageResource(R.drawable.global_mod);
+                        break;
+                    case "Founder": coins.setImageResource(R.drawable.founder);
+                        break;
+                    case "Moderator": coins.setImageResource(R.drawable.moderator);
+                        break;
+                    case "Donator": coins.setImageResource(R.drawable.donator);
+                        break;
+                    case "VIP": coins.setImageResource(R.drawable.vip);
+                        break;
+                }
+            }
+            else
+            {
+                switch (poster.getRank())
+                {
+                    case "Brand New": coins.setImageResource(R.drawable.coin);
+                        break;
+                    case "Newbie": coins.setImageResource(R.drawable.coin);
+                        break;
+                    case "Jr. Member": coins.setImageResource(R.drawable.coin);
+                        break;
+                    case "Member": coins.setImageResource(R.drawable.member);
+                        break;
+                    case "Full Member": coins.setImageResource(R.drawable.full);
+                        break;
+                    case "Sr. Member": coins.setImageResource(R.drawable.sr);
+                        break;
+                    case "Hero Member": coins.setImageResource(R.drawable.hero);
+                        break;
+                    case "Legendary": coins.setImageResource(R.drawable.legendary);
+                        break;
+                    case "Guest": coins.setVisibility(View.GONE);
+                        break;
+                }
+            }
+
+            // Display the post
+            TextView postText = (TextView)v.findViewById(R.id.post);
+            postText.setText(post.getPostBody());
+            postText.setMovementMethod(LinkMovementMethod.getInstance());
+
+            return v;
+        }
+
+        @Override
+        public int getItemViewType(int position) {
+            return 1;
+        }
+
+        @Override
+        public int getViewTypeCount() {
+            return 1;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return false;
+        }
+
+    }
+
+    private class GetPMs extends AsyncTask<Void, Void, List<Post>>
+    {
+        private String topicURL;
+        private String sessId;
+
+        public GetPMs(String topicURL, String sessId)
+        {
+            this.topicURL = topicURL;
+            this.sessId = sessId;
+        }
+
+        // TODO: Change retrieval code to match PMs
+        @Override
+        protected List<Post> doInBackground(Void... params) {
+            List<Post> posts = new ArrayList<Post>();
+
+            try {
+                Document doc = Jsoup.connect(topicURL).cookie("PHPSESSID", mSessId).get();
+
+                // Get body
+                Elements body = doc.select("div#bodyarea");
+
+                // Get the table with posts
+                Element pmTable = body.select("form[name=pmFolder] > table[cellpadding=0]").first();
+
+                // Get the elements with pms
+                Elements pmIds = pmTable.select("tbody > tr > td[style=padding: 1px 1px 0 1px;] > a[name]");
+
+                List<Long> ids = new ArrayList<Long>();
+                for(Element id : pmIds)
+                {
+                    ids.add(Long.parseLong(id.attr("name").substring(3)));
+                }
+
+                Elements pmElements = pmTable.select("table[cellpadding=4] > tbody > tr:not(.windowbg):not(.windowbg2)");
+
+                // Get data from each post
+                for(int i = 0; i < pmElements.size(); i++)
+                {
+                    Element post = pmElements.get(i);
+
+                    // Get element with posterInfo
+                    Element posterInfo = post.select("td[style=overflow: hidden;]").first();
+
+                    // Get poster name
+                    String posterName = posterInfo.select("b > a[href]").text();
+
+                    // Get poster rank and activity
+                    String posterText = posterInfo.text();
+
+                    String posterActivityStr = "";
+                    String posterPersText = "";
+                    if(!posterText.equals("Bitcoin Forum Guest")) {
+                        posterActivityStr = posterText.substring(posterText.indexOf("Activity"), posterText.indexOf(" ", posterText.indexOf("Activity") + 10));
+                        posterPersText = posterText.substring(posterText.indexOf(posterActivityStr) + posterActivityStr.length(), posterText.lastIndexOf("Trust"));
+                    }
+                    else
+                    {
+                        posterName = "Bitcoin Forum";
+                    }
+
+                    // Get rank
+                    String posterRank = "Brand New";
+                    if(posterText.contains("Brand New"))
+                        posterRank = "Brand New";
+                    else if(posterText.contains("Newbie"))
+                        posterRank = "Newbie";
+                    else if(posterText.contains("Jr. Member"))
+                        posterRank = "Jr. Member";
+                    else if(posterText.contains("Full Member"))
+                        posterRank = "Full Member";
+                    else if(posterText.contains("Sr. Member"))
+                        posterRank = "Sr. Member";
+                    else if(posterText.contains("Hero Member"))
+                        posterRank = "Hero Member";
+                    else if(posterText.contains("Legendary"))
+                        posterRank = "Legendary";
+                    else if(posterText.contains("Member"))
+                        posterRank = "Member";
+                    else if(posterText.contains("Guest"))
+                        posterRank = "Guest";
+                    // get special positions
+                    String specialPosition = null;
+                    if(posterText.contains("Staff"))
+                        specialPosition = "Staff";
+                    else if(posterText.contains("Global Moderator"))
+                        specialPosition = "Global Moderator";
+                    else if(posterText.contains("Moderator"))
+                        specialPosition = "Moderator";
+                    else if(posterText.contains("Administrator"))
+                        specialPosition = "Administrator";
+                    else if(posterText.contains("Founder"))
+                        specialPosition = "Founder";
+                    else if(posterText.contains(" Donator"))
+                        specialPosition = "Donator";
+                    else if(posterText.contains("VIP"))
+                        specialPosition = "VIP";
+
+
+                    // Get poster avatar
+                    Elements avatarImgs = posterInfo.select("img.avatar");
+                    BitmapDrawable avatar = null;
+                    if(!avatarImgs.isEmpty())
+                    {
+                        // Get avatar element data
+                        Element avatarImg = avatarImgs.first();
+                        String avatarURL = avatarImg.absUrl("src");
+
+                        // Download avatar
+                        URL url = new URL(avatarURL);
+                        HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                        connection.setDoInput(true);
+                        connection.connect();
+                        InputStream input = connection.getInputStream();
+                        avatar = new BitmapDrawable(getResources(), input);
+                        avatar.setBounds(0, 0, avatar.getIntrinsicWidth()*100, avatar.getIntrinsicHeight()*100);
+                    }
+
+                    // Create poster object
+                    Poster poster = new Poster(posterName, avatar, posterPersText, posterActivityStr, posterRank);
+                    if(specialPosition != null)
+                        poster.setSpecialPos(specialPosition);
+
+                    // Get header element
+                    Element pmHead = post.select("td.windowbg > table > tbody > tr > td[align=left]").first();
+
+                    if(pmHead == null)
+                        pmHead = post.select("td.windowbg2 > table > tbody > tr > td[align=left]").first();
+
+                    // Get subject and post times
+                    String subject = pmHead.select("b").first().text();
+                    String pmedTime = pmHead.text().replaceAll(subject, "");
+
+                    // Get elements with post and header
+                    Element pm = post.select("div.personalmessage").first();
+
+                    // Get body of post
+                    String postBodyStr = pm.html();
+                    Spanned postBody = Html.fromHtml(postBodyStr, new ImageGetter(), null);
+
+                    // Create post object
+                    Post postObj = new Post(poster, pmedTime, subject, postBody, ids.get(i));
+                    posts.add(postObj);
+                }
+
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return posts;
+        }
+
+
+
+        private class ImageGetter implements Html.ImageGetter
+        {
+
+            @Override
+            public Drawable getDrawable(String source) {
+                // Download bitmap
+                if(!source.contains("bitcointalk.org"))
+                    source = "https://bitcointalk.org" + source;
+                BitmapDrawable bmp = null;
+                try {
+                    URL url = new URL(source);
+                    HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+                    connection.setDoInput(true);
+                    connection.connect();
+                    InputStream input = connection.getInputStream();
+                    bmp = new BitmapDrawable(getResources(), input);
+                    bmp.setBounds(0, 0, bmp.getIntrinsicWidth()*10, bmp.getIntrinsicHeight()*10);
+                }
+                catch(Exception e)
+                {
+                    e.printStackTrace();
+                }
+                return bmp;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(List<Post> result)
+        {
+            showProgress(false);
+            mGetPMsTask = null;
+
+            if(mPageNum == 1)
+            {
+                mPrevButton.setClickable(false);
+                mPrevButton.setVisibility(View.GONE);
+                if (result.size() < 20) {
+                    mNextButton.setClickable(false);
+                    mNextButton.setVisibility(View.GONE);
+                }
+                else
+                {
+                    mNextButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onPMPageSelected(mPageNum + 1);
+                        }
+                    });
+                }
+            }
+            else {
+                if (result.size() <= 20) {
+                    mNextButton.setClickable(false);
+                    mNextButton.setVisibility(View.GONE);
+                    mPrevButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onPMPageSelected(mPageNum - 1);
+                        }
+                    });
+                } else {
+                    mPrevButton.setClickable(true);
+                    mNextButton.setClickable(true);
+                    mPrevButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onPMPageSelected(mPageNum - 1);
+                        }
+                    });
+                    mNextButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onPMPageSelected(mPageNum + 1);
+                        }
+                    });
+                }
+            }
+
+            PostsListAdapter mAdapter  = new PostsListAdapter(result);
+            mListView.setAdapter(mAdapter);
+        }
+
+        @Override
+        protected void onCancelled() {
+            mGetPMsTask = null;
+            showProgress(false);
+        }
+    }
+
+    public interface OnMessageInteraction {
+
+        public void onPMPageSelected(String topicURL);
     }
 
 }

@@ -12,6 +12,7 @@ import android.widget.Toast;
 
 import com.achow101.bitcointalkforum.fragments.BoardTopicFragment;
 import com.achow101.bitcointalkforum.fragments.HomeFragment;
+import com.achow101.bitcointalkforum.fragments.MessagesFragment;
 import com.achow101.bitcointalkforum.fragments.NavigationDrawerFragment;
 import com.achow101.bitcointalkforum.fragments.ProfileFragment;
 import com.achow101.bitcointalkforum.fragments.TopicFragment;
@@ -24,7 +25,9 @@ import java.util.List;
 public class MainActivity extends AppCompatActivity implements NavigationDrawerFragment.NavigationDrawerCallbacks,
         HomeFragment.GoToBoard,
         BoardTopicFragment.OnTopicListInteraction,
-        UnreadPostListsFragment.OnUnreadListInteraction {
+        UnreadPostListsFragment.OnUnreadListInteraction,
+        TopicFragment.OnTopicInteraction,
+        MessagesFragment.OnPMInteraction{
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -79,11 +82,12 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
             case 4: fragmentManager.beginTransaction().replace(R.id.container, ProfileFragment.newInstance(sessId)).commit();
                 break;
             // Messages
-            case 5: //TODO: Create fragment for this
+            case 5: fragmentManager.beginTransaction().replace(R.id.container, MessagesFragment.newInstance(1, sessId)).commit();
                 break;
             // Logout
-            case 7:
-                Intent intentLogout = new Intent(this,LoginActivity.class);
+            case 6:
+                sessId = null;
+                Intent intentLogout = new Intent(this, LoginActivity.class);
                 intentLogout.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
                 startActivity(intentLogout);
                 finish();
@@ -152,5 +156,17 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
     public void onChildBoardSelected(String boardURL, String category) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.container, BoardTopicFragment.newInstance(boardURL, sessId, category)).commit();
+    }
+
+    @Override
+    public void onPageSelected(String topicURL) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, TopicFragment.newInstance(topicURL, sessId)).commit();
+    }
+
+    @Override
+    public void onPMPageSelected(int page) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, MessagesFragment.newInstance(page, sessId)).commit();
     }
 }

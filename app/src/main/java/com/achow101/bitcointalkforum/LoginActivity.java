@@ -51,6 +51,8 @@ public class LoginActivity extends Activity{
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        Intent intent = getIntent();
+
         context = getApplicationContext();
 
         // Set up the login form.

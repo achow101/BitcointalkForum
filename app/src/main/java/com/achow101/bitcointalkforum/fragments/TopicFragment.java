@@ -1,5 +1,6 @@
 package com.achow101.bitcointalkforum.fragments;
 
+import android.app.Activity;
 import android.content.Context;
 import android.database.DataSetObserver;
 import android.graphics.Bitmap;
@@ -21,10 +22,13 @@ import android.widget.ListAdapter;
 import android.widget.ListView;
 import android.widget.ProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.achow101.bitcointalkforum.R;
+import com.achow101.bitcointalkforum.items.Board;
 import com.achow101.bitcointalkforum.items.Post;
 import com.achow101.bitcointalkforum.items.Poster;
+import com.achow101.bitcointalkforum.items.Topic;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -56,6 +60,8 @@ public class TopicFragment extends Fragment {
     private List<Post> mPosts;
 
     private GetPosts mGetPostsTask;
+
+    private OnTopicInteraction mListener;
 
     public static TopicFragment newInstance(String topicURL, String sessId) {
         TopicFragment fragment = new TopicFragment();
@@ -110,6 +116,22 @@ public class TopicFragment extends Fragment {
         mPrevButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mNextButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mPageNumText.setVisibility(show ? View.GONE : View.VISIBLE);
+    }
+
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        try {
+            mListener = (OnTopicInteraction) activity;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(activity.toString() + " must implement OnTopicInteraction");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        mListener = null;
     }
 
     private class PostsListAdapter implements ListAdapter
@@ -275,7 +297,7 @@ public class TopicFragment extends Fragment {
 
     }
 
-    private class GetPosts extends AsyncTask<Void, Void, List<Post>>
+    private class GetPosts extends AsyncTask<Void, Void, List<List<Object>>>
     {
         private String topicURL;
         private String sessId;
@@ -287,11 +309,25 @@ public class TopicFragment extends Fragment {
         }
 
         @Override
-        protected List<Post> doInBackground(Void... params) {
-            List<Post> posts = new ArrayList<Post>();
+        protected List<List<Object>> doInBackground(Void... params) {
+            List<Object> posts = new ArrayList<Object>();
+            List<Object> nextPrevPageURLS = new ArrayList<Object>();
 
             try {
                 Document doc = Jsoup.connect(topicURL).cookie("PHPSESSID", mSessId).get();
+
+                // Get prev and next page URLs
+                Elements prevnexts = doc.select("span.prevnext > a.navPages");
+                for(Element prevnext : prevnexts)
+                {
+                    switch(prevnext.text())
+                    {
+                        case "«": nextPrevPageURLS.add(prevnext.attr("href"));
+                            break;
+                        case "»": nextPrevPageURLS.add(prevnext.attr("href"));
+                            break;
+                    }
+                }
 
                 // Get table with all the posts
                 Elements postsTable = doc.select("div#bodyarea > form > table.bordercolor");
@@ -399,7 +435,7 @@ public class TopicFragment extends Fragment {
                     Spanned postBody = Html.fromHtml(postBodyStr, new ImageGetter(), null);
 
                     // Create post object
-                    Post postObj = new Post(poster, postURL, postedTime, subject, postBody, id);
+                    Post postObj = new Post(poster, postedTime, subject, postBody, id);
                     posts.add(postObj);
                 }
 
@@ -407,7 +443,11 @@ public class TopicFragment extends Fragment {
                 e.printStackTrace();
             }
 
-            return posts;
+            List<List<Object>> out = new ArrayList<List<Object>>();
+            out.add(posts);
+            out.add(nextPrevPageURLS);
+
+            return out;
         }
 
 
@@ -439,13 +479,75 @@ public class TopicFragment extends Fragment {
         }
 
         @Override
-        protected void onPostExecute(List<Post> result)
+        protected void onPostExecute(List<List<Object>> result)
         {
             mGetPostsTask = null;
             showProgress(false);
 
-            PostsListAdapter mAdapter  = new PostsListAdapter(result);
-            mListView.setAdapter(mAdapter);
+            if (result.size() > 0) {
+                List<Object> postObjs = result.get(0);
+                final List<Object> prevNextURLs = result.get(1);
+                List<Post> posts = new ArrayList<Post>();
+
+                for (Object post : postObjs) {
+                    posts.add((Post) post);
+                }
+
+                if(mTopicURL.contains(".0"))
+                {
+                    mPrevButton.setClickable(false);
+                    mPrevButton.setVisibility(View.GONE);
+                    if (posts.size() < 20) {
+                        mNextButton.setClickable(false);
+                        mNextButton.setVisibility(View.GONE);
+                    }
+                    else
+                    {
+                        mNextButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onPageSelected((String) prevNextURLs.get(0));
+                            }
+                        });
+                    }
+                }
+                else {
+                    if (posts.size() < 20) {
+                        mNextButton.setClickable(false);
+                        mNextButton.setVisibility(View.GONE);
+                        mPrevButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onPageSelected((String) prevNextURLs.get(0));
+                            }
+                        });
+                    } else {
+                        mPrevButton.setClickable(true);
+                        mNextButton.setClickable(true);
+                        mPrevButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onPageSelected((String) prevNextURLs.get(0));
+                            }
+                        });
+                        mNextButton.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View v) {
+                                mListener.onPageSelected((String) prevNextURLs.get(1));
+                            }
+                        });
+                    }
+                }
+
+                PostsListAdapter mAdapter  = new PostsListAdapter(posts);
+                mListView.setAdapter(mAdapter);
+
+            } else
+            {
+                Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
+                toast.show();
+            }
+
         }
 
         @Override
@@ -453,6 +555,11 @@ public class TopicFragment extends Fragment {
             mGetPostsTask = null;
             showProgress(false);
         }
+    }
+
+    public interface OnTopicInteraction {
+
+        public void onPageSelected(String topicURL);
     }
 
 }
