@@ -384,7 +384,7 @@ public class UnreadPostListsFragment extends Fragment {
                         ids.add(id);
 
                         // Get the URLs
-                        topicURLs.add(elem.select("span > a[href]").get(0).attr("href"));
+                        topicURLs.add(elem.select("a[href]").get(0).attr("href"));
                     }
                     else if(elem.html().contains("title=\"View the profile of"))
                     {

@@ -106,7 +106,6 @@ public class TopicFragment extends Fragment {
         // Get arguments stuff
         mTopicURL = getArguments().getString("Topic URL");
         mSessId = getArguments().getString("Session ID");
-        int pageNum = (Integer.parseInt(mTopicURL.substring(mTopicURL.indexOf(".", mTopicURL.indexOf("topic=")) + 1)) / 40) + 1;
 
         // Get layout stuff
         mProgressView = (ProgressBar) v.findViewById(R.id.posts_progress_bar);
@@ -116,7 +115,6 @@ public class TopicFragment extends Fragment {
 
         // Set page number
         mPageNumText = (TextView)v.findViewById(R.id.page_num);
-        mPageNumText.setText("Page " + pageNum);
 
         // get posts
         showProgress(true);
@@ -329,6 +327,7 @@ public class TopicFragment extends Fragment {
         protected List<List<Object>> doInBackground(Void... params) {
             List<Object> posts = new ArrayList<Object>();
             List<Object> nextPrevPageURLS = new ArrayList<Object>();
+            List<Object> pageNums = new ArrayList<Object>();
 
             try {
                 Document doc = Jsoup.connect(topicURL).cookie("PHPSESSID", mSessId).get();
@@ -344,6 +343,39 @@ public class TopicFragment extends Fragment {
                         case "»": nextPrevPageURLS.add(prevnext.attr("href"));
                             break;
                     }
+                }
+
+                // Get navPages
+                Elements navPages = doc.select("td.middletext[valign=bottom][style=padding-bottom: 4px;] > a.navPages");
+                int lastPage = 0;
+
+                // For one page topics
+                if(navPages.isEmpty())
+                {
+                    pageNums.add(1);
+                    pageNums.add(1);
+                }
+
+                // for multipage topics and page is in middle
+                for(Element navPage : navPages)
+                {
+                    int thisPage = Integer.parseInt(navPage.text());
+                    if(thisPage - 1 != lastPage) {
+                        pageNums.add(thisPage - 1);
+                        pageNums.add(Integer.parseInt(navPages.last().text()));
+                        break;
+                    }
+                    else
+                    {
+                        lastPage++;
+                    }
+                }
+
+                // for last page of topic
+                if(pageNums.isEmpty())
+                {
+                    pageNums.add(lastPage + 1);
+                    pageNums.add(lastPage + 1);
                 }
 
                 // Get table with all the posts
@@ -463,6 +495,7 @@ public class TopicFragment extends Fragment {
             List<List<Object>> out = new ArrayList<List<Object>>();
             out.add(posts);
             out.add(nextPrevPageURLS);
+            out.add(pageNums);
 
             return out;
         }
@@ -505,6 +538,7 @@ public class TopicFragment extends Fragment {
                 List<Object> postObjs = result.get(0);
                 final List<Object> prevNextURLs = result.get(1);
                 List<Post> posts = new ArrayList<Post>();
+                List<Object> pageNums = result.get(2);
 
                 for (Object post : postObjs) {
                     posts.add((Post) post);
@@ -555,6 +589,9 @@ public class TopicFragment extends Fragment {
                         });
                     }
                 }
+
+                // Set page numbers
+                mPageNumText.setText("Page " + pageNums.get(0) + "/" + pageNums.get(1));
 
                 PostsListAdapter mAdapter  = new PostsListAdapter(posts);
                 mListView.setAdapter(mAdapter);

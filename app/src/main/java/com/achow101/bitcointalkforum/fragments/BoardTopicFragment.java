@@ -111,7 +111,6 @@ public class BoardTopicFragment extends Fragment {
         // Get stuff for adapter
         mBoardURL = getArguments().getString("URL");
         mSessId = getArguments().getString("SessID");
-        int pageNum = (Integer.parseInt(mBoardURL.substring(mBoardURL.indexOf(".", mBoardURL.indexOf("board=")) + 1)) / 40) + 1;
 
         // Get the ListView
         mListView = (ListView) view.findViewById(R.id.topics_list);
@@ -123,7 +122,6 @@ public class BoardTopicFragment extends Fragment {
 
         // Set page number text
         mPageNumText = (TextView)view.findViewById(R.id.page_num);
-        mPageNumText.setText("Page " + pageNum);
 
         // Get the topics from Bitcointalk
         showProgress(true);
@@ -352,6 +350,7 @@ public class BoardTopicFragment extends Fragment {
             List<Object> topics = new ArrayList<Object>();
             List<Object> childBoards = new ArrayList<Object>();
             List<Object> nextPrevPageURLS = new ArrayList<Object>();
+            List<Object> pageNums = new ArrayList<Object>();
             try {
                 // Retrieve the page
                 Document doc = Jsoup.connect(boardURL).cookie("PHPSESSID", mSessId).get();
@@ -370,6 +369,39 @@ public class BoardTopicFragment extends Fragment {
                         case "»": nextPrevPageURLS.add(prevnext.attr("href"));
                             break;
                     }
+                }
+
+                // Get navPages
+                Elements navPages = doc.select("td#toppages > a.navPages");
+                int lastPage = 0;
+
+                // For one page topics
+                if(navPages.isEmpty())
+                {
+                    pageNums.add(1);
+                    pageNums.add(1);
+                }
+
+                // for multipage topics and page is in middle
+                for(Element navPage : navPages)
+                {
+                    int thisPage = Integer.parseInt(navPage.text());
+                    if(thisPage - 1 != lastPage) {
+                        pageNums.add(thisPage - 1);
+                        pageNums.add(Integer.parseInt(navPages.last().text()));
+                        break;
+                    }
+                    else
+                    {
+                        lastPage++;
+                    }
+                }
+
+                // for last page of topic
+                if(pageNums.isEmpty())
+                {
+                    pageNums.add(lastPage + 1);
+                    pageNums.add(lastPage + 1);
                 }
 
                 // Get the divs for Child Boards and topics
@@ -536,6 +568,7 @@ public class BoardTopicFragment extends Fragment {
             out.add(childBoards);
             out.add(topics);
             out.add(nextPrevPageURLS);
+            out.add(pageNums);
 
             return out;
         }
@@ -550,6 +583,7 @@ public class BoardTopicFragment extends Fragment {
                 List<Object> childBoards = result.get(0);
                 List<Object> topics = result.get(1);
                 final List<Object> prevNextURLs = result.get(2);
+                List<Object> pageNums = result.get(3);
                 mChildBoards = new ArrayList<Board>();
                 mTopics = new ArrayList<Topic>();
 
@@ -599,6 +633,9 @@ public class BoardTopicFragment extends Fragment {
                         });
                     }
                 }
+
+                // Set page numbers
+                mPageNumText.setText("Page " + pageNums.get(0) + "/" + pageNums.get(1));
 
             } else
             {
