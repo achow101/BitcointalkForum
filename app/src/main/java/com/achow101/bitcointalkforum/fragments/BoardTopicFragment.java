@@ -242,8 +242,7 @@ public class BoardTopicFragment extends Fragment {
                 goToLastPost.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast toast = Toast.makeText(getContext(), "Go To Last Post Clicked. URL: " + topic.getLastPostURL(), Toast.LENGTH_LONG);
-                        toast.show();
+                        mListener.onTopicSelected(topic.getLastPostURL());
                     }
                 });
 
@@ -371,37 +370,27 @@ public class BoardTopicFragment extends Fragment {
                     }
                 }
 
-                // Get navPages
-                Elements navPages = doc.select("td#toppages > a.navPages");
-                int lastPage = 0;
-
-                // For one page topics
-                if(navPages.isEmpty())
+                // Set current page
+                Elements boldNavPages = doc.select("td#toppages > b");
+                for(Element page : boldNavPages)
                 {
-                    pageNums.add(1);
-                    pageNums.add(1);
+                    if(!page.text().contains("..."))
+                        pageNums.add(Integer.parseInt(page.text()));
                 }
 
-                // for multipage topics and page is in middle
-                for(Element navPage : navPages)
+                // Get and set last page
+                Element lastNavPage = doc.select("td#toppages > a.navPages").last();
+                if(lastNavPage == null)
                 {
-                    int thisPage = Integer.parseInt(navPage.text());
-                    if(thisPage - 1 != lastPage) {
-                        pageNums.add(thisPage - 1);
-                        pageNums.add(Integer.parseInt(navPages.last().text()));
-                        break;
-                    }
-                    else
-                    {
-                        lastPage++;
-                    }
+                    pageNums.add(1);
                 }
-
-                // for last page of topic
-                if(pageNums.isEmpty())
+                else if(Integer.parseInt(lastNavPage.text()) > (Integer)pageNums.get(0))
                 {
-                    pageNums.add(lastPage + 1);
-                    pageNums.add(lastPage + 1);
+                    pageNums.add(Integer.parseInt(lastNavPage.text()));
+                }
+                else
+                {
+                    pageNums.add(Integer.parseInt(lastNavPage.text()) + 1);
                 }
 
                 // Get the divs for Child Boards and topics

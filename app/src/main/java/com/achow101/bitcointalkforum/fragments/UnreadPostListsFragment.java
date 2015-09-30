@@ -245,8 +245,7 @@ public class UnreadPostListsFragment extends Fragment {
                 goToLastPost.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Toast toast = Toast.makeText(getContext(), "Go To Last Post Clicked. URL: " + topic.getLastPostURL(), Toast.LENGTH_LONG);
-                        toast.show();
+                        mListener.onTopicSelected(topic.getLastPostURL());
                     }
                 });
 
@@ -408,8 +407,7 @@ public class UnreadPostListsFragment extends Fragment {
                     }
                 }
 
-                for(int i = 0; i < subjects.size(); i++)
-                {
+                for(int i = 0; i < subjects.size(); i++) {
                     Topic topicObj = new Topic(subjects.get(i), starters.get(i), repliesCount.get(i), viewCount.get(i), lastPoster.get(i), stickies.get(i), locked.get(i), true, ids.get(i));
                     topicObj.setURL(topicURLs.get(i));
                     topicObj.setLastPostURL(lastPostURLs.get(i));

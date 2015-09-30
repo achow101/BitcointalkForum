@@ -345,37 +345,27 @@ public class TopicFragment extends Fragment {
                     }
                 }
 
-                // Get navPages
-                Elements navPages = doc.select("td.middletext[valign=bottom][style=padding-bottom: 4px;] > a.navPages");
-                int lastPage = 0;
-
-                // For one page topics
-                if(navPages.isEmpty())
+                // Set current page
+                Elements boldNavPages = doc.select("td.middletext[valign=bottom][style=padding-bottom: 4px;] > b");
+                for(Element page : boldNavPages)
                 {
-                    pageNums.add(1);
-                    pageNums.add(1);
+                    if(!page.text().contains("..."))
+                        pageNums.add(Integer.parseInt(page.text()));
                 }
 
-                // for multipage topics and page is in middle
-                for(Element navPage : navPages)
+                // Get and set last page
+                Element lastNavPage = doc.select("td.middletext[valign=bottom][style=padding-bottom: 4px;] > a.navPages").last();
+                if(lastNavPage == null)
                 {
-                    int thisPage = Integer.parseInt(navPage.text());
-                    if(thisPage - 1 != lastPage) {
-                        pageNums.add(thisPage - 1);
-                        pageNums.add(Integer.parseInt(navPages.last().text()));
-                        break;
-                    }
-                    else
-                    {
-                        lastPage++;
-                    }
+                    pageNums.add(1);
                 }
-
-                // for last page of topic
-                if(pageNums.isEmpty())
+                else if(Integer.parseInt(lastNavPage.text()) > (Integer)pageNums.get(0))
                 {
-                    pageNums.add(lastPage + 1);
-                    pageNums.add(lastPage + 1);
+                    pageNums.add(Integer.parseInt(lastNavPage.text()));
+                }
+                else
+                {
+                    pageNums.add(Integer.parseInt(lastNavPage.text()) + 1);
                 }
 
                 // Get table with all the posts
@@ -595,6 +585,10 @@ public class TopicFragment extends Fragment {
 
                 PostsListAdapter mAdapter  = new PostsListAdapter(posts);
                 mListView.setAdapter(mAdapter);
+
+                // Scroll to bottom if last post jump
+                if(mTopicURL.contains(".msg"))
+                    mListView.setSelection(posts.size() - 1);
 
             } else
             {
