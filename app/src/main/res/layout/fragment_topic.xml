@@ -57,6 +57,16 @@
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Page"
         android:id="@+id/page_num"
-        android:layout_gravity="center_horizontal|bottom"/>
+        android:layout_gravity="center_horizontal|bottom"
+        android:layout_marginRight="30dp"/>
+
+    <Button
+        style="?android:attr/buttonStyleSmall"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Reply"
+        android:id="@+id/reply_button"
+        android:layout_gravity="bottom|right"
+        android:layout_marginRight="60dp"/>
 
 </FrameLayout>

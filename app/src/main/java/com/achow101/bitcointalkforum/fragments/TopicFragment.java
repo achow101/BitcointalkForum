@@ -69,6 +69,7 @@ public class TopicFragment extends Fragment {
 
     private Button mPrevButton;
     private Button mNextButton;
+    private Button mReplyButton;
 
     private ListView mListView;
 
@@ -112,6 +113,7 @@ public class TopicFragment extends Fragment {
         mListView = (ListView) v.findViewById(R.id.posts_list);
         mPrevButton = (Button) v.findViewById(R.id.prev_page_button);
         mNextButton = (Button) v.findViewById(R.id.next_page_button);
+        mReplyButton = (Button) v.findViewById(R.id.reply_button);
 
         // Set page number
         mPageNumText = (TextView)v.findViewById(R.id.page_num);
@@ -131,6 +133,7 @@ public class TopicFragment extends Fragment {
         mPrevButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mNextButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mPageNumText.setVisibility(show ? View.GONE : View.VISIBLE);
+        mReplyButton.setVisibility(show ? View.GONE : View.VISIBLE);
     }
 
     @Override
@@ -590,6 +593,16 @@ public class TopicFragment extends Fragment {
                 if(mTopicURL.contains(".msg"))
                     mListView.setSelection(posts.size() - 1);
 
+                final long id = Long.parseLong(mTopicURL.substring(mTopicURL.indexOf("topic=") + 6, mTopicURL.indexOf(".", mTopicURL.indexOf("topic="))));
+                final int replyCount = (Integer)pageNums.get(1) * 20;
+
+                mReplyButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mListener.onReplySelected(id, replyCount);
+                    }
+                });
+
             } else
             {
                 Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
@@ -608,6 +621,7 @@ public class TopicFragment extends Fragment {
     public interface OnTopicInteraction {
 
         public void onPageSelected(String topicURL);
+        public void onReplySelected(long topicId, int numReplies);
     }
 
 }

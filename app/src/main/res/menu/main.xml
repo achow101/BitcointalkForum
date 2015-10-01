@@ -25,6 +25,6 @@
           app:showAsAction="never"/>
     <item android:id="@+id/action_about"
           android:title="@string/action_about"
-          android:orderInCategory="99"
+          android:orderInCategory="101"
           app:showAsAction="never"/>
 </menu>

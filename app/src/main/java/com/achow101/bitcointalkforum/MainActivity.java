@@ -18,6 +18,7 @@
 package com.achow101.bitcointalkforum;
 
 import android.content.Intent;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.widget.DrawerLayout;
@@ -32,6 +33,7 @@ import com.achow101.bitcointalkforum.fragments.HomeFragment;
 import com.achow101.bitcointalkforum.fragments.MessagesFragment;
 import com.achow101.bitcointalkforum.fragments.NavigationDrawerFragment;
 import com.achow101.bitcointalkforum.fragments.ProfileFragment;
+import com.achow101.bitcointalkforum.fragments.ReplyFragment;
 import com.achow101.bitcointalkforum.fragments.TopicFragment;
 import com.achow101.bitcointalkforum.fragments.UnreadPostListsFragment;
 import com.achow101.bitcointalkforum.items.Board;
@@ -44,7 +46,8 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         BoardTopicFragment.OnTopicListInteraction,
         UnreadPostListsFragment.OnUnreadListInteraction,
         TopicFragment.OnTopicInteraction,
-        MessagesFragment.OnPMInteraction{
+        MessagesFragment.OnPMInteraction,
+        ReplyFragment.OnPostListener{
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -143,6 +146,14 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_settings) {
+            Intent settingsIntent = new Intent(this, SettingsActivity.class);
+            startActivity(settingsIntent);
+            return true;
+        }
+        else if (id == R.id.action_about)
+        {
+            Intent aboutIntent = new Intent(this, AboutActivity.class);
+            startActivity(aboutIntent);
             return true;
         }
 
@@ -182,8 +193,19 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
     }
 
     @Override
+    public void onReplySelected(long topicId, int numReplies) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, ReplyFragment.newInstance(topicId, numReplies, sessId)).commit();
+    }
+
+    @Override
     public void onPMPageSelected(int page) {
         FragmentManager fragmentManager = getSupportFragmentManager();
         fragmentManager.beginTransaction().replace(R.id.container, MessagesFragment.newInstance(page, sessId)).commit();
+    }
+
+    @Override
+    public void onPostInteraction(Uri uri) {
+
     }
 }
