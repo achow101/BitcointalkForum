@@ -471,8 +471,6 @@ public class TopicFragment extends Fragment {
                     long id = Long.parseLong(postURL.substring(postURL.indexOf("#msg") + 4));
                     String postedTime = headerAndPost.select("table > tbody > tr > td > div.smalltext").first().text();
 
-                    // TODO: add the parsing of quotes and images
-
                     // Get body of post
                     String postBodyStr = headerAndPost.select(".post").first().html();
                     Spanned postBody = Html.fromHtml(postBodyStr, new ImageGetter(), null);
@@ -494,7 +492,13 @@ public class TopicFragment extends Fragment {
                     {
                         replyURLs.add(item.attr("href"));
                     }
-                    else if(item.text().contains("Watch") || item.text().contains("Unwatch") || item.text().contains("Mark unread") || item.text().contains("Notify") || item.text().contains("Print"))
+                    else if(item.text().contains("Watch")
+                            || item.text().contains("Unwatch")
+                            || item.text().contains("Mark unread")
+                            || item.text().contains("Notify")
+                            || item.text().contains("Print")
+                            || item.text().contains("Lock topic")
+                            || item.text().contains("Move Topic"))
                     {
 
                     }

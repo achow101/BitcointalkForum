@@ -38,4 +38,13 @@
         android:layout_below="@+id/poster"
         android:layout_alignLeft="@+id/poster"
         android:layout_alignStart="@+id/poster"/>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@android:color/black"
+        android:id="@+id/div3"
+        android:layout_below="@+id/post"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"/>
 </RelativeLayout>

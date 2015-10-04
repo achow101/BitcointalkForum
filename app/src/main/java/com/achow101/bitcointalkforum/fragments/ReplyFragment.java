@@ -41,6 +41,7 @@ import android.widget.Toast;
 import com.achow101.bitcointalkforum.R;
 import com.achow101.bitcointalkforum.items.SummaryPost;
 
+import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
@@ -60,6 +61,11 @@ public class ReplyFragment extends Fragment {
     private String mReplyURL;
     private String mSessId;
 
+    private PostReply mPostReply;
+    private String mPostURL;
+    private String mTopicID;
+    private String mSC;
+
     private EditText mSubjectText;
     private EditText mMessageText;
     private ListView mTopicSummary;
@@ -70,7 +76,7 @@ public class ReplyFragment extends Fragment {
     private TextView mMessageLabel;
     private TextView mSummaryLabel;
 
-    private getReplyPage mGetReplyPage;
+    private GetReplyPage mGetReplyPage;
 
     public static ReplyFragment newInstance(String replyURL, String sessId) {
         ReplyFragment fragment = new ReplyFragment();
@@ -112,8 +118,8 @@ public class ReplyFragment extends Fragment {
 
         // getting data
         showProgress(true);
-        mGetReplyPage = new getReplyPage(mReplyURL, mSessId);
-        mGetReplyPage.execute((Void)null);
+        mGetReplyPage = new GetReplyPage(mReplyURL, mSessId);
+        mGetReplyPage.execute((Void) null);
 
         return v;
     }
@@ -233,12 +239,12 @@ public class ReplyFragment extends Fragment {
         }
     }
 
-    private class getReplyPage extends AsyncTask<Void, Void, List<List<Object>>>
+    private class GetReplyPage extends AsyncTask<Void, Void, List<List<Object>>>
     {
         private String mReplyURL;
         private String mSessId;
 
-        public getReplyPage(String replyURL, String sessId)
+        public GetReplyPage(String replyURL, String sessId)
         {
             this.mReplyURL = replyURL;
             this.mSessId = sessId;
@@ -249,6 +255,7 @@ public class ReplyFragment extends Fragment {
             List<List<Object>> out = new ArrayList<List<Object>>();
             List<Object> subjMess = new ArrayList<Object>();
             List<Object> postSummary = new ArrayList<Object>();
+            List<Object> postData = new ArrayList<>();
 
             try {
                 Document doc = Jsoup.connect(mReplyURL).cookie("PHPSESSID", mSessId).get();
@@ -276,12 +283,22 @@ public class ReplyFragment extends Fragment {
                     postSummary.add(postObj);
                 }
 
+                // Get post URL
+                postData.add(doc.select("form#postmodify").attr("action"));
+
+                // Get topic id
+                postData.add(doc.select("td.windowbg > input[name=topic]").first().attr("value"));
+
+                // Get secret key
+                postData.add(doc.select("input[type=hidden][name=sc]").first().attr("value"));
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
 
             out.add(subjMess);
             out.add(postSummary);
+            out.add(postData);
 
             return out;
         }
@@ -316,16 +333,19 @@ public class ReplyFragment extends Fragment {
         protected void onPostExecute(List<List<Object>> result)
         {
             showProgress(false);
+            mProgressView.setVisibility(View.GONE);
             mGetReplyPage = null;
 
             if(result.size() > 0)
             {
-                List<Object> subjMess = result.get(0);
+                final List<Object> subjMess = result.get(0);
                 List<Object> posts = result.get(1);
 
                 // Set subject and message texts initial text
                 mSubjectText.setText((String)subjMess.get(0));
                 mMessageText.setText((String)subjMess.get(1));
+
+                // TODO: add stuff for quick icons like smileys and text formatting
 
                 // Set topic summary list
                 List<SummaryPost> summaryPosts = new ArrayList<>();
@@ -335,12 +355,69 @@ public class ReplyFragment extends Fragment {
                 TopicSummaryAdapter mAdp = new TopicSummaryAdapter(summaryPosts);
                 mTopicSummary.setAdapter(mAdp);
 
+                // Set the post url
+                mPostURL = (String)result.get(2).get(0);
+                mTopicID = (String)result.get(2).get(1);
+                mSC = (String)result.get(2).get(2);
+
+
+                // Set posting behavior
+                mPost.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mPostReply = new PostReply(mPostURL, mSubjectText.getText().toString(), mMessageText.getText().toString(), mSC, mTopicID, mSessId);
+                        mPostReply.execute((Void)null);
+                    }
+                });
+
             }
             else
             {
                 Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
                 toast.show();
             }
+        }
+    }
+
+    private class PostReply extends AsyncTask<Void, Void, Void>
+    {
+        private String postURL;
+        private String sc;
+        private String subject;
+        private String message;
+        private String id;
+        private String sessId;
+
+        public PostReply(String postURL, String subject, String message, String sc, String id, String sessId)
+        {
+            this.postURL = postURL;
+            this.sc = sc;
+            this.subject = subject;
+            this.message = message;
+            this.id = id;
+            this.sessId = sessId;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            try {
+                Connection.Response res = Jsoup.connect(postURL)
+                        .data("sc", sc)
+                        .data("subject", subject)
+                        .data("message", message)
+                        .data("topic", id)
+                        // TODO: add stuff for additional options for posting
+                        .data("do_watch", "1")
+                        .data("additional_options", "0")
+                        .cookie("PHPSESSID", sessId)
+                        .method(Connection.Method.POST)
+                        .execute();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
         }
     }
 
