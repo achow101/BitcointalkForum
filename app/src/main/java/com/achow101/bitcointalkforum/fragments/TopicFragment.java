@@ -331,6 +331,7 @@ public class TopicFragment extends Fragment {
             List<Object> posts = new ArrayList<Object>();
             List<Object> nextPrevPageURLS = new ArrayList<Object>();
             List<Object> pageNums = new ArrayList<Object>();
+            List<Object> replyURLs = new ArrayList<Object>();
 
             try {
                 Document doc = Jsoup.connect(topicURL).cookie("PHPSESSID", mSessId).get();
@@ -479,6 +480,28 @@ public class TopicFragment extends Fragment {
                     // Create post object
                     Post postObj = new Post(poster, postedTime, subject, postBody, id);
                     posts.add(postObj);
+
+                    // Get quote url for post
+                    String quoteURL = headerAndPost.select("td.td_buttons > div > a[href]").first().attr("href");
+                    replyURLs.add(quoteURL);
+                }
+
+                // Get the actual reply url
+                Elements threadActions = doc.select("td.mirrortab_back > a[href]");
+                for(Element item : threadActions)
+                {
+                    if(item.text().contains("Reply"))
+                    {
+                        replyURLs.add(item.attr("href"));
+                    }
+                    else if(item.text().contains("Watch") || item.text().contains("Unwatch") || item.text().contains("Mark unread") || item.text().contains("Notify") || item.text().contains("Print"))
+                    {
+
+                    }
+                    else
+                    {
+                        replyURLs.add("Thread Locked");
+                    }
                 }
 
             } catch (IOException e) {
@@ -489,6 +512,7 @@ public class TopicFragment extends Fragment {
             out.add(posts);
             out.add(nextPrevPageURLS);
             out.add(pageNums);
+            out.add(replyURLs);
 
             return out;
         }
@@ -532,6 +556,7 @@ public class TopicFragment extends Fragment {
                 final List<Object> prevNextURLs = result.get(1);
                 List<Post> posts = new ArrayList<Post>();
                 List<Object> pageNums = result.get(2);
+                final List<Object> replyURLs = result.get(3);
 
                 for (Object post : postObjs) {
                     posts.add((Post) post);
@@ -596,12 +621,19 @@ public class TopicFragment extends Fragment {
                 final long id = Long.parseLong(mTopicURL.substring(mTopicURL.indexOf("topic=") + 6, mTopicURL.indexOf(".", mTopicURL.indexOf("topic="))));
                 final int replyCount = (Integer)pageNums.get(1) * 20;
 
-                mReplyButton.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        mListener.onReplySelected(id, replyCount);
-                    }
-                });
+                if(replyURLs.get(replyURLs.size() - 1).equals("Thread Locked"))
+                {
+                    mReplyButton.setVisibility(View.GONE);
+                }
+                else {
+                    mReplyButton.setVisibility(View.VISIBLE);
+                    mReplyButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            mListener.onReplySelected((String) replyURLs.get(replyURLs.size() - 1));
+                        }
+                    });
+                }
 
             } else
             {
@@ -621,7 +653,7 @@ public class TopicFragment extends Fragment {
     public interface OnTopicInteraction {
 
         public void onPageSelected(String topicURL);
-        public void onReplySelected(long topicId, int numReplies);
+        public void onReplySelected(String replyURL);
     }
 
 }

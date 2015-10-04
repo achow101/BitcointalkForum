@@ -90,17 +90,15 @@
         android:text="Post"
         android:id="@+id/post_button"
         android:layout_below="@+id/message_text"
-        android:layout_alignLeft="@+id/subject_text"
-        android:layout_alignStart="@+id/subject_text"/>
+        android:layout_centerHorizontal="true"/>
 
-    <Button
-        style="?android:attr/buttonStyleSmall"
+    <ProgressBar
+        style="?android:attr/progressBarStyleLarge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="Preview"
-        android:id="@+id/preview_button"
-        android:layout_below="@+id/message_text"
-        android:layout_toRightOf="@+id/topic_summary_textview"
-        android:layout_toEndOf="@+id/topic_summary_textview"/>
+        android:id="@+id/progress"
+        android:layout_above="@+id/post_button"
+        android:layout_centerHorizontal="true"
+        android:visibility="gone"/>
 
 </RelativeLayout>

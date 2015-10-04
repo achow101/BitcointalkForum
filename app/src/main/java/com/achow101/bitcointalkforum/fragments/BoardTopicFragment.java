@@ -346,6 +346,7 @@ public class BoardTopicFragment extends Fragment {
         @Override
         protected List<List<Object>> doInBackground(Void... params)
         {
+            List<List<Object>> out = new ArrayList<List<Object>>();
             List<Object> topics = new ArrayList<Object>();
             List<Object> childBoards = new ArrayList<Object>();
             List<Object> nextPrevPageURLS = new ArrayList<Object>();
@@ -549,15 +550,14 @@ public class BoardTopicFragment extends Fragment {
                     }
                 }
 
+                out.add(childBoards);
+                out.add(topics);
+                out.add(nextPrevPageURLS);
+                out.add(pageNums);
+
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            List<List<Object>> out = new ArrayList<List<Object>>();
-            out.add(childBoards);
-            out.add(topics);
-            out.add(nextPrevPageURLS);
-            out.add(pageNums);
 
             return out;
         }
@@ -626,26 +626,25 @@ public class BoardTopicFragment extends Fragment {
                 // Set page numbers
                 mPageNumText.setText("Page " + pageNums.get(0) + "/" + pageNums.get(1));
 
+                BoardTopicsListAdapter mListAdp = new BoardTopicsListAdapter(mTopics, mChildBoards);
+                mListView.setAdapter(mListAdp);
+
+                mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        if (position < mChildBoards.size()) {
+                            mListener.onChildBoardSelected(mChildBoards.get(position).getURL(), mChildBoards.get(position).getCategory());
+                        } else {
+                            mListener.onTopicSelected(mTopics.get(position - mChildBoards.size()).getUrl());
+                        }
+                    }
+                });
+
             } else
             {
                 Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
                 toast.show();
             }
-
-            BoardTopicsListAdapter mListAdp = new BoardTopicsListAdapter(mTopics, mChildBoards);
-            mListView.setAdapter(mListAdp);
-
-            mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    if (position < mChildBoards.size()) {
-                        mListener.onChildBoardSelected(mChildBoards.get(position).getURL(), mChildBoards.get(position).getCategory());
-                    } else {
-                        mListener.onTopicSelected(mTopics.get(position - mChildBoards.size()).getUrl());
-                    }
-                }
-            });
-
         }
 
         @Override

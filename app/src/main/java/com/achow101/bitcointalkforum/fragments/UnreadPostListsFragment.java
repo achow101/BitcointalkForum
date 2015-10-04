@@ -481,21 +481,21 @@ public class UnreadPostListsFragment extends Fragment {
                     }
                 }
 
+                UnreadPostsListAdapter mListAdp = new UnreadPostsListAdapter(topics);
+                mListView.setAdapter(mListAdp);
+
+                mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                    @Override
+                    public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                        mListener.onTopicSelected(topics.get(position).getUrl());
+                    }
+                });
+
             } else
             {
                 Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
                 toast.show();
             }
-
-            UnreadPostsListAdapter mListAdp = new UnreadPostsListAdapter(topics);
-            mListView.setAdapter(mListAdp);
-
-            mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                @Override
-                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                    mListener.onTopicSelected(topics.get(position).getUrl());
-                }
-            });
 
         }
 

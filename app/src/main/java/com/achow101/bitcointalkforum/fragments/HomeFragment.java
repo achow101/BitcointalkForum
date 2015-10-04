@@ -161,6 +161,7 @@ public class HomeFragment extends Fragment {
             ConnectivityManager connMgr = (ConnectivityManager) getContext().getSystemService(Context.CONNECTIVITY_SERVICE);
             List<Object> categories = new ArrayList<Object>();
             List<Object> boards = new ArrayList<Object>();
+            List<List<Object>> out = new ArrayList<List<Object>>();
             NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
             if (networkInfo != null && networkInfo.isConnected()) {
                 try {
@@ -206,6 +207,8 @@ public class HomeFragment extends Fragment {
                             categories.add(new ForumCategory(category, boardTitlesList, boardTitlesList.size(), catNum - 1));
                         }
                     }
+                    out.add(categories);
+                    out.add(boards);
 
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -213,9 +216,6 @@ public class HomeFragment extends Fragment {
 
             }
 
-            List<List<Object>> out = new ArrayList<List<Object>>();
-            out.add(categories);
-            out.add(boards);
 
             return out;
         }
@@ -240,37 +240,39 @@ public class HomeFragment extends Fragment {
                 for (Object board : boards) {
                     mBoards.add((Board) board);
                 }
+
+
+                // Setup Expandable Listview for home
+                ExpandableListAdapter mExpListAdp = new ExpandableListAdapter(getContext(), mCategories, mBoards);
+                mExpListView.setAdapter(mExpListAdp);
+
+                // Expand everything
+                mExpListView.expandGroup(0);
+                mExpListView.expandGroup(1);
+                mExpListView.expandGroup(2);
+                mExpListView.expandGroup(3);
+                mExpListView.expandGroup(4);
+
+                // Set the click listener
+                mExpListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
+                    @Override
+                    public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
+
+                        // Retrieve the URL for the board
+                        Board board = mCategories.get(groupPosition).getBoards().get(childPosition);
+                        String boardURL = board.getURL();
+
+                        // Replace this fragment with one for the board
+                        mBoardCallback.OnBoardSelected(boardURL, board.getName());
+
+                        return true;
+                    }
+                });
             } else {
                 Toast toast = Toast.makeText(getContext(), "An error occurred", Toast.LENGTH_LONG);
                 toast.show();
             }
 
-            // Setup Expandable Listview for home
-            ExpandableListAdapter mExpListAdp = new ExpandableListAdapter(getContext(), mCategories, mBoards);
-            mExpListView.setAdapter(mExpListAdp);
-
-            // Expand everything
-            mExpListView.expandGroup(0);
-            mExpListView.expandGroup(1);
-            mExpListView.expandGroup(2);
-            mExpListView.expandGroup(3);
-            mExpListView.expandGroup(4);
-
-            // Set the click listener
-            mExpListView.setOnChildClickListener(new ExpandableListView.OnChildClickListener() {
-                @Override
-                public boolean onChildClick(ExpandableListView parent, View v, int groupPosition, int childPosition, long id) {
-
-                    // Retrieve the URL for the board
-                    Board board = mCategories.get(groupPosition).getBoards().get(childPosition);
-                    String boardURL = board.getURL();
-
-                    // Replace this fragment with one for the board
-                    mBoardCallback.OnBoardSelected(boardURL, board.getName());
-
-                    return true;
-                }
-            });
         }
 
         @Override

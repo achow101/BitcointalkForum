@@ -247,6 +247,8 @@ public class LoginActivity extends Activity{
                 } catch(IOException e)
                 {
                     e.printStackTrace();
+                    out[0] = "false";
+                    out[1] = e.getMessage();
                 }
 
             }

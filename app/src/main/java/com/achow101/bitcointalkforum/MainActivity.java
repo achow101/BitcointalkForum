@@ -193,9 +193,9 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
     }
 
     @Override
-    public void onReplySelected(long topicId, int numReplies) {
+    public void onReplySelected(String replyURL) {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.container, ReplyFragment.newInstance(topicId, numReplies, sessId)).commit();
+        fragmentManager.beginTransaction().replace(R.id.container, ReplyFragment.newInstance(replyURL, sessId)).commit();
     }
 
     @Override
