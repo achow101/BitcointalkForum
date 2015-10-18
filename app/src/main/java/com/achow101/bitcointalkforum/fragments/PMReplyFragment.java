@@ -279,11 +279,14 @@ public class PMReplyFragment extends Fragment {
                 Elements posters = doc.select(" td.windowbg2 > table > tbody > tr");
                 Elements posts = doc.select("table.bordercolor > tbody > tr > td.windowbg");
 
-                Element poster = posters.first();
-                Element post = posts.last();
+                if(!posters.isEmpty() && !posts.isEmpty())
+                {
+                    Element poster = posters.first();
+                    Element post = posts.last();
 
-                SummaryPost postObj = new SummaryPost(poster.text(), Html.fromHtml(post.html(), new ImageGetter(), null));
-                postSummary.add(postObj);
+                    SummaryPost postObj = new SummaryPost(poster.text(), Html.fromHtml(post.html(), new ImageGetter(), null));
+                    postSummary.add(postObj);
+                }
 
                 // Get post URL
                 postData.add(doc.select("form#postmodify").attr("action"));

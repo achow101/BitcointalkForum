@@ -9,10 +9,15 @@ This is a currently unifinished app that will allow user to browse and post on t
 - Browse and read Personal Messages
 - Receive notifications about new PMs and Posts
 - Post replies to topics
+- Edit and delete your posts in topics
+- Reply to, quote, and send new Personal Messages
 
 ##Upcoming Features
-- edit posts in the forum
-- Send Personal Messages
+- Search for topics
+- Search for Personal Messages
+- Search for members
+- Edit Profile information
+- View other members' profile information
 
 ##Contributing
 You can contribute to this project in a number of ways

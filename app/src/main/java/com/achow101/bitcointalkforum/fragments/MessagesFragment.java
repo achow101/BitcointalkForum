@@ -65,6 +65,7 @@ public class MessagesFragment extends Fragment {
     private Button mPrevButton;
     private Button mNextButton;
     private TextView mPageNumText;
+    private Button newMessageButton;
 
     private GetPMs mGetPMsTask;
 
@@ -104,9 +105,15 @@ public class MessagesFragment extends Fragment {
         mPrevButton = (Button) v.findViewById(R.id.prev_page_button);
         mNextButton = (Button) v.findViewById(R.id.next_page_button);
 
-        // Hide the reply button, not needed in messages
-        Button replyButton = (Button)v.findViewById(R.id.reply_button);
-        replyButton.setVisibility(View.GONE);
+        // Reply button to new Button, New PM when clicked
+        newMessageButton = (Button)v.findViewById(R.id.reply_button);
+        newMessageButton.setText("New");
+        newMessageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mListener.onPMReplySelected("https://bitcointalk.org/index.php?action=pm;sa=send");
+            }
+        });
 
         // Set page number
         mPageNumText = (TextView)v.findViewById(R.id.page_num);
@@ -149,6 +156,7 @@ public class MessagesFragment extends Fragment {
         mPrevButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mNextButton.setVisibility(show ? View.GONE : View.VISIBLE);
         mPageNumText.setVisibility(show ? View.GONE : View.VISIBLE);
+        newMessageButton.setVisibility(show ? View.GONE : View.VISIBLE);
     }
 
     private class PostsListAdapter implements ListAdapter
