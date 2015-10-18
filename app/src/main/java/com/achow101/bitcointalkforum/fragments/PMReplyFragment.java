@@ -54,7 +54,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class ReplyFragment extends Fragment {
+public class PMReplyFragment extends Fragment {
 
     private OnPostListener mListener;
 
@@ -78,8 +78,8 @@ public class ReplyFragment extends Fragment {
 
     private GetReplyPage mGetReplyPage;
 
-    public static ReplyFragment newInstance(String replyURL, String sessId) {
-        ReplyFragment fragment = new ReplyFragment();
+    public static PMReplyFragment newInstance(String replyURL, String sessId) {
+        PMReplyFragment fragment = new PMReplyFragment();
         Bundle args = new Bundle();
         args.putString("Reply URL", replyURL);
         args.putString("Session ID", sessId);
@@ -87,7 +87,7 @@ public class ReplyFragment extends Fragment {
         return fragment;
     }
 
-    public ReplyFragment() {
+    public PMReplyFragment() {
         // Required empty public constructor
     }
 
@@ -264,34 +264,45 @@ public class ReplyFragment extends Fragment {
                 // retrieve subject
                 String subject = doc.select("td > input[name=subject]").first().attr("value");
 
+                // retrieve recipient
+                String to = doc.select("td > input[name=to]").first().attr("value");
+
                 // Retrieve any existing message (e.g. quotes)
                 String message = doc.select("td > textarea.editor[name=message]").first().text();
 
                 // Add subject and message to a list
                 subjMess.add(subject);
                 subjMess.add(message);
+                subjMess.add(to);
 
                 // Get posters and posts for topic summary
-                Elements posters = doc.select("table > tbody > tr.catbg");
-                Elements posts = doc.select("table > tbody > tr.windowbg2");
+                Elements posters = doc.select(" td.windowbg2 > table > tbody > tr");
+                Elements posts = doc.select("table.bordercolor > tbody > tr > td.windowbg");
 
-                for(int i = 0; i < posts.size(); i++)
-                {
-                    Element poster = posters.get(i);
-                    Element post = posts.get(i);
+                Element poster = posters.first();
+                Element post = posts.last();
 
-                    SummaryPost postObj = new SummaryPost(poster.text(), Html.fromHtml(post.html(), new ImageGetter(), null));
-                    postSummary.add(postObj);
-                }
+                SummaryPost postObj = new SummaryPost(poster.text(), Html.fromHtml(post.html(), new ImageGetter(), null));
+                postSummary.add(postObj);
 
                 // Get post URL
                 postData.add(doc.select("form#postmodify").attr("action"));
 
                 // Get topic id
-                postData.add(doc.select("td.windowbg > input[name=topic]").first().attr("value"));
+                postData.add(doc.select("input[type=hidden][name=replied_to]").first().attr("value"));
 
                 // Get secret key
                 postData.add(doc.select("input[type=hidden][name=sc]").first().attr("value"));
+
+                // Get seqnum
+                postData.add(doc.select("input[type=hidden][name=seqnum]").first().attr("value"));
+
+                // Get f
+                postData.add(doc.select("input[type=hidden][name=f]").first().attr("value"));
+
+                // get l
+                postData.add(doc.select("input[type=hidden][name=l]").first().attr("value"));
+
 
             } catch (IOException e) {
                 e.printStackTrace();
@@ -360,17 +371,18 @@ public class ReplyFragment extends Fragment {
                 mPostURL = (String)result.get(2).get(0);
                 mTopicID = (String)result.get(2).get(1);
                 mSC = (String)result.get(2).get(2);
-
-                // get return url
-                final String returnURL = mReplyURL.replaceAll("action=post;", "").substring(0, mReplyURL.lastIndexOf(";"));
+                final String to = (String)subjMess.get(2);
+                final String seqnum = (String)result.get(2).get(3);
+                final String f = (String)result.get(2).get(4);
+                final String l = (String)result.get(2).get(5);
 
                 // Set posting behavior
                 mPost.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        mPostReply = new PostReply(mPostURL, mSubjectText.getText().toString(), mMessageText.getText().toString(), mSC, mTopicID, mSessId);
+                        mPostReply = new PostReply(to, mPostURL, mSubjectText.getText().toString(), mMessageText.getText().toString(), mSC, mTopicID, mSessId, seqnum, f, l);
                         mPostReply.execute((Void)null);
-                        mListener.onTopicSelected(returnURL);
+                        mListener.onPMPageSelected(0);
                     }
                 });
 
@@ -391,8 +403,12 @@ public class ReplyFragment extends Fragment {
         private String message;
         private String id;
         private String sessId;
+        private String seqnum;
+        private String f;
+        private String l;
+        private String to;
 
-        public PostReply(String postURL, String subject, String message, String sc, String id, String sessId)
+        public PostReply(String to, String postURL, String subject, String message, String sc, String id, String sessId, String seqnum, String f, String l)
         {
             this.postURL = postURL;
             this.sc = sc;
@@ -400,6 +416,10 @@ public class ReplyFragment extends Fragment {
             this.message = message;
             this.id = id;
             this.sessId = sessId;
+            this.seqnum = seqnum;
+            this.f = f;
+            this.l = l;
+            this.to = to;
         }
 
         @Override
@@ -407,14 +427,14 @@ public class ReplyFragment extends Fragment {
 
             try {
                 Connection.Response res = Jsoup.connect(postURL)
+                        .data("to", to)
                         .data("sc", sc)
                         .data("subject", subject)
                         .data("message", message)
-                        .data("topic", id)
-                        .data("icon", "xx")
-                        // TODO: add stuff for additional options for posting
-                        .data("do_watch", "1")
-                        .data("additional_options", "0")
+                        .data("replied_to", id)
+                        .data("seqnum", seqnum)
+                        .data("f", f)
+                        .data("l", l)
                         .cookie("PHPSESSID", sessId)
                         .method(Connection.Method.POST)
                         .execute();
@@ -427,7 +447,7 @@ public class ReplyFragment extends Fragment {
     }
 
     public interface OnPostListener {
-        public void onTopicSelected(String topicURL);
+        public void onPMPageSelected(int page);
     }
 
 }

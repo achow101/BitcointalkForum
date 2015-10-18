@@ -104,6 +104,10 @@ public class MessagesFragment extends Fragment {
         mPrevButton = (Button) v.findViewById(R.id.prev_page_button);
         mNextButton = (Button) v.findViewById(R.id.next_page_button);
 
+        // Hide the reply button, not needed in messages
+        Button replyButton = (Button)v.findViewById(R.id.reply_button);
+        replyButton.setVisibility(View.GONE);
+
         // Set page number
         mPageNumText = (TextView)v.findViewById(R.id.page_num);
         mPageNumText.setText("Page " + mPageNum);
@@ -135,6 +139,7 @@ public class MessagesFragment extends Fragment {
     public interface OnPMInteraction {
 
         public void onPMPageSelected(int page);
+        public void onPMReplySelected(String editURL);
     }
 
     public void showProgress(final boolean show) {
@@ -205,7 +210,7 @@ public class MessagesFragment extends Fragment {
             }
 
             // Get post and poster
-            Post post = posts.get(position);
+            final Post post = posts.get(position);
             Poster poster = post.getPoster();
 
             // Get post text views
@@ -291,6 +296,38 @@ public class MessagesFragment extends Fragment {
             TextView postText = (TextView)v.findViewById(R.id.post);
             postText.setText(post.getPostBody());
             postText.setMovementMethod(LinkMovementMethod.getInstance());
+
+            // Get the buttons
+            Button quoteButton = (Button) v.findViewById(R.id.quote_button);
+            Button editButton = (Button) v.findViewById(R.id.edit_button);
+            Button replyButton = (Button) v.findViewById(R.id.reply_button);
+            Button deleteButton = (Button) v.findViewById(R.id.delete_button);
+
+            // Hide edit button
+            editButton.setVisibility(View.GONE);
+
+            // Set delete listener
+            deleteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    DeleteReply delRep = new DeleteReply(post.getDeleteURL(), mSessId);
+                    delRep.execute((Void) null);
+                }
+            });
+
+            // Set reply and quote listener
+            replyButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mListener.onPMReplySelected(post.getEditURL());
+                }
+            });
+            quoteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mListener.onPMReplySelected(post.getQuoteURL());
+                }
+            });
 
             return v;
         }
@@ -446,6 +483,16 @@ public class MessagesFragment extends Fragment {
                     if(pmHead == null)
                         pmHead = post.select("td.windowbg2 > table > tbody > tr > td[align=left]").first();
 
+                    // Get header right
+                    Element pmHeadRight = post.select("td.windowbg > table > tbody > tr > td[align=right]").first();
+                    if(pmHeadRight == null)
+                        pmHeadRight = post.select("td.windowbg2 > table > tbody > tr > td[align=right]").first();
+
+                    // Get quote reply and delete strings
+                    String quoteURL = pmHeadRight.select("a[href]").first().attr("href");
+                    String replyURL = pmHeadRight.select("a[href]").get(1).attr("href");
+                    String deleteURL = pmHeadRight.select("a[href]").get(2).attr("href");
+
                     // Get subject and post times
                     String subject = pmHead.select("b").first().text();
                     String pmedTime = pmHead.text().replaceAll(subject, "");
@@ -458,7 +505,7 @@ public class MessagesFragment extends Fragment {
                     Spanned postBody = Html.fromHtml(postBodyStr, new ImageGetter(), null);
 
                     // Create post object
-                    Post postObj = new Post(poster, pmedTime, subject, postBody, ids.get(i));
+                    Post postObj = new Post(poster, pmedTime, subject, postBody, ids.get(i), quoteURL, replyURL, deleteURL);
                     posts.add(postObj);
                 }
 
@@ -560,9 +607,34 @@ public class MessagesFragment extends Fragment {
         }
     }
 
-    public interface OnMessageInteraction {
+    private class DeleteReply extends AsyncTask<Void, Void, Void>
+    {
+        private String deleteURL;
+        private String sessId;
 
-        public void onPMPageSelected(String topicURL);
+        public DeleteReply(String deleteURL, String sessId)
+        {
+            this.deleteURL = deleteURL;
+            this.sessId = sessId;
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+
+            try {
+                Document deleteDoc = Jsoup.connect(deleteURL).cookie("PHPSESSID", sessId).get();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void result)
+        {
+            mListener.onPMPageSelected(0);
+        }
     }
 
 }

@@ -38,6 +38,7 @@ import com.achow101.bitcointalkforum.fragments.BoardTopicFragment;
 import com.achow101.bitcointalkforum.fragments.HomeFragment;
 import com.achow101.bitcointalkforum.fragments.MessagesFragment;
 import com.achow101.bitcointalkforum.fragments.NavigationDrawerFragment;
+import com.achow101.bitcointalkforum.fragments.PMReplyFragment;
 import com.achow101.bitcointalkforum.fragments.ProfileFragment;
 import com.achow101.bitcointalkforum.fragments.ReplyFragment;
 import com.achow101.bitcointalkforum.fragments.TopicFragment;
@@ -59,7 +60,8 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
         UnreadPostListsFragment.OnUnreadListInteraction,
         TopicFragment.OnTopicInteraction,
         MessagesFragment.OnPMInteraction,
-        ReplyFragment.OnPostListener{
+        ReplyFragment.OnPostListener,
+        PMReplyFragment.OnPostListener{
 
     /**
      * Fragment managing the behaviors, interactions and presentation of the navigation drawer.
@@ -247,14 +249,15 @@ public class MainActivity extends AppCompatActivity implements NavigationDrawerF
     }
 
     @Override
-    public void onPMPageSelected(int page) {
+    public void onPMReplySelected(String replyURL) {
         FragmentManager fragmentManager = getSupportFragmentManager();
-        fragmentManager.beginTransaction().replace(R.id.container, MessagesFragment.newInstance(page, sessId)).commit();
+        fragmentManager.beginTransaction().replace(R.id.container, PMReplyFragment.newInstance(replyURL, sessId)).commit();
     }
 
     @Override
-    public void onPostInteraction(Uri uri) {
-
+    public void onPMPageSelected(int page) {
+        FragmentManager fragmentManager = getSupportFragmentManager();
+        fragmentManager.beginTransaction().replace(R.id.container, MessagesFragment.newInstance(page, sessId)).commit();
     }
 
     public void onResume()

@@ -37,14 +37,20 @@ public class Post {
     private Spanned postBody;
     private String subject;
     private long id;
+    private String quoteURL;
+    private String editURL;
+    private String deleteURL;
 
-    public Post(Poster poster, String postedTime, String subject, Spanned postBody, long id)
+    public Post(Poster poster, String postedTime, String subject, Spanned postBody, long id, String quoteURL, String editURL, String deleteURL)
     {
         this.poster = poster;
         this.postedTime = postedTime;
         this.postBody = postBody;
         this.subject = subject;
         this.id = id;
+        this.quoteURL = quoteURL;
+        this.editURL = editURL;
+        this.deleteURL = deleteURL;
     }
 
     public Poster getPoster()
@@ -71,6 +77,21 @@ public class Post {
     public String getPostedTime()
     {
         return postedTime;
+    }
+
+    public String getQuoteURL()
+    {
+        return quoteURL;
+    }
+
+    public String getEditURL()
+    {
+        return editURL;
+    }
+
+    public String getDeleteURL()
+    {
+        return deleteURL;
     }
 
 }

@@ -145,14 +145,15 @@
             android:layout_alignParentStart="true"/>
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:textAppearance="?android:attr/textAppearanceMedium"
-            android:text="post"
+            android:text="postaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
             android:id="@+id/post"
-            android:layout_below="@+id/div2"
-            android:layout_alignParentLeft="true"
-            android:layout_alignParentStart="true"/>
+            android:layout_below="@+id/linearLayout"
+            android:layout_alignParentStart="true"
+            android:layout_alignRight="@+id/linearLayout"
+            android:layout_alignEnd="@+id/linearLayout"/>
 
         <View
             android:layout_width="match_parent"
@@ -162,6 +163,62 @@
             android:layout_below="@+id/post"
             android:layout_alignParentLeft="true"
             android:layout_alignParentStart="true"/>
+
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_below="@+id/div2"
+            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
+            android:layout_toEndOf="@+id/activity"
+            android:layout_toRightOf="@+id/activity"
+            android:nestedScrollingEnabled="false"
+            android:id="@+id/linearLayout">
+
+            <Button
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Reply"
+                android:id="@+id/reply_button"
+                android:layout_below="@+id/div2"
+                android:layout_toLeftOf="@+id/edit_button"
+                android:layout_toStartOf="@+id/edit_button"/>
+
+            <Button
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Edit"
+                android:id="@+id/edit_button"
+                android:layout_below="@+id/div2"
+                android:layout_toLeftOf="@+id/delete_button"
+                android:layout_toStartOf="@+id/delete_button"/>
+
+            <Button
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Quote"
+                android:id="@+id/quote_button"
+                android:layout_alignTop="@+id/reply_button"
+                android:layout_toLeftOf="@+id/reply_button"
+                android:layout_toStartOf="@+id/reply_button"
+                />
+
+            <Button
+                style="?android:attr/buttonStyleSmall"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete"
+                android:id="@+id/delete_button"
+                android:layout_below="@+id/div2"
+                android:layout_alignParentRight="true"
+                android:layout_alignParentEnd="true"
+                />
+        </LinearLayout>
+
     </RelativeLayout>
 
 </LinearLayout>

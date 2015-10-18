@@ -75,8 +75,6 @@ public class TopicFragment extends Fragment {
 
     private TextView mPageNumText;
 
-    private List<Post> mPosts;
-
     private GetPosts mGetPostsTask;
 
     private OnTopicInteraction mListener;
@@ -204,30 +202,29 @@ public class TopicFragment extends Fragment {
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             View v = convertView;
-            if(v == null)
-            {
+            if (v == null) {
                 LayoutInflater infalInflater = (LayoutInflater) getContext().getSystemService(Context.LAYOUT_INFLATER_SERVICE);
                 v = infalInflater.inflate(R.layout.post_layout, null);
             }
 
             // Get post and poster
-            Post post = posts.get(position);
+            final Post post = posts.get(position);
             Poster poster = post.getPoster();
 
             // Get post text views
-            TextView subjectTitle = (TextView)v.findViewById(R.id.subject_title);
-            TextView postTime = (TextView)v.findViewById(R.id.post_time);
+            TextView subjectTitle = (TextView) v.findViewById(R.id.subject_title);
+            TextView postTime = (TextView) v.findViewById(R.id.post_time);
 
             // Set post text views
             subjectTitle.setText(post.getSubject());
             postTime.setText(post.getPostedTime());
 
             // Get poster text views
-            TextView posterTxt = (TextView)v.findViewById(R.id.poster);
-            TextView rank = (TextView)v.findViewById(R.id.rank);
-            TextView personalText = (TextView)v.findViewById(R.id.personal_text);
-            TextView activity = (TextView)v.findViewById(R.id.activity);
-            TextView specialPos = (TextView)v.findViewById(R.id.spec_pos);
+            TextView posterTxt = (TextView) v.findViewById(R.id.poster);
+            TextView rank = (TextView) v.findViewById(R.id.rank);
+            TextView personalText = (TextView) v.findViewById(R.id.personal_text);
+            TextView activity = (TextView) v.findViewById(R.id.activity);
+            TextView specialPos = (TextView) v.findViewById(R.id.spec_pos);
 
             // set text for poster
             posterTxt.setText(poster.getName());
@@ -236,64 +233,117 @@ public class TopicFragment extends Fragment {
             personalText.setText(poster.getPersonalText());
 
             // Get and set poster avatar image
-            ImageView avatar = (ImageView)v.findViewById(R.id.avatar);
+            ImageView avatar = (ImageView) v.findViewById(R.id.avatar);
             avatar.setImageDrawable(poster.getAvatar());
 
             // Set special position text
-            if(poster.isSpecial())
+            if (poster.isSpecial())
                 specialPos.setText(poster.getSpecialPos());
-            else
-            {
+            else {
                 specialPos.setText("");
                 specialPos.setVisibility(View.GONE);
             }
 
             // Set rank coins
-            ImageView coins = (ImageView)v.findViewById(R.id.coins);
-            if(poster.isSpecial() && !poster.getSpecialPos().equals("Staff"))
-            {
-                switch(poster.getSpecialPos())
-                {
-                    case "Administrator": coins.setImageResource(R.drawable.admin);
+            ImageView coins = (ImageView) v.findViewById(R.id.coins);
+            if (poster.isSpecial() && !poster.getSpecialPos().equals("Staff")) {
+                switch (poster.getSpecialPos()) {
+                    case "Administrator":
+                        coins.setImageResource(R.drawable.admin);
                         break;
-                    case "Global Moderator": coins.setImageResource(R.drawable.global_mod);
+                    case "Global Moderator":
+                        coins.setImageResource(R.drawable.global_mod);
                         break;
-                    case "Founder": coins.setImageResource(R.drawable.founder);
+                    case "Founder":
+                        coins.setImageResource(R.drawable.founder);
                         break;
-                    case "Moderator": coins.setImageResource(R.drawable.moderator);
+                    case "Moderator":
+                        coins.setImageResource(R.drawable.moderator);
                         break;
-                    case "Donator": coins.setImageResource(R.drawable.donator);
+                    case "Donator":
+                        coins.setImageResource(R.drawable.donator);
                         break;
-                    case "VIP": coins.setImageResource(R.drawable.vip);
+                    case "VIP":
+                        coins.setImageResource(R.drawable.vip);
                         break;
                 }
-            }
-            else
-            {
-                switch (poster.getRank())
-                {
-                    case "Brand New": coins.setImageResource(R.drawable.coin);
+            } else {
+                switch (poster.getRank()) {
+                    case "Brand New":
+                        coins.setImageResource(R.drawable.coin);
                         break;
-                    case "Newbie": coins.setImageResource(R.drawable.coin);
+                    case "Newbie":
+                        coins.setImageResource(R.drawable.coin);
                         break;
-                    case "Jr. Member": coins.setImageResource(R.drawable.coin);
+                    case "Jr. Member":
+                        coins.setImageResource(R.drawable.coin);
                         break;
-                    case "Member": coins.setImageResource(R.drawable.member);
+                    case "Member":
+                        coins.setImageResource(R.drawable.member);
                         break;
-                    case "Full Member": coins.setImageResource(R.drawable.full);
+                    case "Full Member":
+                        coins.setImageResource(R.drawable.full);
                         break;
-                    case "Sr. Member": coins.setImageResource(R.drawable.sr);
+                    case "Sr. Member":
+                        coins.setImageResource(R.drawable.sr);
                         break;
-                    case "Hero Member": coins.setImageResource(R.drawable.hero);
+                    case "Hero Member":
+                        coins.setImageResource(R.drawable.hero);
                         break;
-                    case "Legendary": coins.setImageResource(R.drawable.legendary);
+                    case "Legendary":
+                        coins.setImageResource(R.drawable.legendary);
                 }
             }
 
             // Display the post
-            TextView postText = (TextView)v.findViewById(R.id.post);
+            TextView postText = (TextView) v.findViewById(R.id.post);
             postText.setText(post.getPostBody());
             postText.setMovementMethod(LinkMovementMethod.getInstance());
+
+            // Get the buttons
+            Button quoteButton = (Button) v.findViewById(R.id.quote_button);
+            Button editButton = (Button) v.findViewById(R.id.edit_button);
+            Button replyButton = (Button) v.findViewById(R.id.reply_button);
+            Button deleteButton = (Button) v.findViewById(R.id.delete_button);
+
+            // Hide reply button
+            replyButton.setVisibility(View.GONE);
+
+            // Hide delete and edit buttons if post is not by user
+            if (post.getDeleteURL() == null) {
+                deleteButton.setVisibility(View.GONE);
+            }
+            else
+            {
+                deleteButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mListener.onPageSelected(post.getDeleteURL());
+                    }
+                });
+            }
+
+            if (post.getEditURL() == null)
+            {
+                editButton.setVisibility(View.GONE);
+            }
+            else
+            {
+                editButton.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        mListener.onReplySelected(post.getEditURL());
+                    }
+                });
+            }
+
+            // Set listener for quote button
+            quoteButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    mListener.onReplySelected(post.getQuoteURL());
+                }
+            });
 
             return v;
         }
@@ -475,13 +525,20 @@ public class TopicFragment extends Fragment {
                     String postBodyStr = headerAndPost.select(".post").first().html();
                     Spanned postBody = Html.fromHtml(postBodyStr, new ImageGetter(), null);
 
-                    // Create post object
-                    Post postObj = new Post(poster, postedTime, subject, postBody, id);
-                    posts.add(postObj);
+                    // Get quote, edit, and delete urls
+                    Elements URLs = headerAndPost.select("td.td_buttons > div > a[href]");
+                    String quoteURL = URLs.first().attr("href");
+                    String editURL = null;
+                    String deleteURL = null;
+                    if(URLs.size() > 2)
+                    {
+                        editURL = URLs.get(1).attr("href");
+                        deleteURL = URLs.get(2).attr("href");
+                    }
 
-                    // Get quote url for post
-                    String quoteURL = headerAndPost.select("td.td_buttons > div > a[href]").first().attr("href");
-                    replyURLs.add(quoteURL);
+                    // Create post object
+                    Post postObj = new Post(poster, postedTime, subject, postBody, id, quoteURL, editURL, deleteURL);
+                    posts.add(postObj);
                 }
 
                 // Get the actual reply url

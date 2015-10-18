@@ -544,6 +544,16 @@ public class NotificationService extends Service {
                 if(pmHead == null)
                     pmHead = post.select("td.windowbg2 > table > tbody > tr > td[align=left]").first();
 
+                // Get header right
+                Element pmHeadRight = post.select("td.windowbg > table > tbody > tr > td[align=right]").first();
+                if(pmHeadRight == null)
+                    pmHeadRight = post.select("td.windowbg2 > table > tbody > tr > td[align=right]").first();
+
+                // Get quote reply and delete strings
+                String quoteURL = pmHeadRight.select("a[href]").first().attr("href");
+                String replyURL = pmHeadRight.select("a[href]").get(0).attr("href");
+                String deleteURL = pmHeadRight.select("a[href]").get(1).attr("href");
+
                 // Get subject and post times
                 String subject = pmHead.select("b").first().text();
                 String pmedTime = pmHead.text().replaceAll(subject, "");
@@ -557,7 +567,7 @@ public class NotificationService extends Service {
                 Spanned postBody = Html.fromHtml(postBodyStr);
 
                 // Create post object
-                Post postObj = new Post(poster, pmedTime, subject, postBody, ids.get(i));
+                Post postObj = new Post(poster, pmedTime, subject, postBody, ids.get(i), quoteURL, replyURL, deleteURL);
                 posts.add(postObj);
             }
 
@@ -688,7 +698,8 @@ public class NotificationService extends Service {
                 }
                 mBuilder.setContentText(text);
                 mBuilder.setSound(Uri.parse(sound));
-                mBuilder.setVibrate(new long[] {1000, 1000});
+                if(vibrate)
+                    mBuilder.setVibrate(new long[] {0, 400, 50, 200});
 
                 // Creates an explicit intent for an Activity in your app
                 Intent resultIntent = new Intent(getApplicationContext(), MainActivity.class);
