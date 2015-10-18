@@ -687,8 +687,8 @@ public class NotificationService extends Service {
                     }
                 }
                 mBuilder.setContentText(text);
-                mBuilder.setSound(Uri.parse(Uri.encode(sound)));
-                mBuilder.setVibrate(new long[] {1000});
+                mBuilder.setSound(Uri.parse(sound));
+                mBuilder.setVibrate(new long[] {1000, 1000});
 
                 // Creates an explicit intent for an Activity in your app
                 Intent resultIntent = new Intent(getApplicationContext(), MainActivity.class);

@@ -7,11 +7,12 @@ This is a currently unifinished app that will allow user to browse and post on t
 ##Current Features
 - Browse topics and boards in the forum
 - Browse and read Personal Messages
+- Receive notifications about new PMs and Posts
+- Post replies to topics
 
 ##Upcoming Features
-- Post and edit posts in the forum
+- edit posts in the forum
 - Send Personal Messages
-- Receive notifications about new PMs and Posts
 
 ##Contributing
 You can contribute to this project in a number of ways
