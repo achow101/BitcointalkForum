@@ -269,6 +269,7 @@ public class LoginActivity extends Activity{
             if (result[0].equals("true")) {
                 Intent intent = new Intent(context, MainActivity.class);
                 intent.putExtra("SESSION ID", result[2]);
+                intent.putExtra("Username", mUsernameView.getText().toString());
                 startActivity(intent);
             } else {
                 if (result[1].equals("Incorrect Password")) {

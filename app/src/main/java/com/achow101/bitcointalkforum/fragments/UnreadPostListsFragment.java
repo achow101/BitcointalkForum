@@ -44,6 +44,8 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -308,6 +310,29 @@ public class UnreadPostListsFragment extends Fragment {
             try {
                 // Retrieve the page
                 Document doc = Jsoup.connect(mListURL).cookie("PHPSESSID", mSessId).get();
+
+                // Save files to internal for notification checking
+                if(mListURL.contains("start=0")) {
+                    FileOutputStream os = null;
+                    // watchlist
+                    if (mListURL.contains("watchlist")) {
+                        os = getContext().openFileOutput("watchlist.html", Context.MODE_PRIVATE);
+                    }
+                    // unread posts
+                    else if (mListURL.contains("unread;")) {
+                        os = getContext().openFileOutput("unreadposts.html", Context.MODE_PRIVATE);
+                    }
+                    // Unread replies
+                    else if (mListURL.contains("unreadreplies")) {
+                        os = getContext().openFileOutput("unreadreplies.html", Context.MODE_PRIVATE);
+                    }
+
+                    // write the data
+                    if (os != null) {
+                        os.write(doc.html().getBytes());
+                        os.close();
+                    }
+                }
 
                 // Retrieve the body area of the page
                 Element body = doc.getElementById("bodyarea");

@@ -99,6 +99,8 @@
 
     <string name="pref_title_watchlist">Watchlist</string>
     <string name="pref_title_personal_Messages">Personal Messages</string>
+    <string name="pref_title_unreadposts">Unread Posts</string>
+    <string name="pref_title_unreadreplies">Unread Replies</string>
 
     <string name="title_activity_about">About</string>
     <string name="about">This is the unofficial android app for the official Bitcoin Forum, Bitcointalk.org.\n\nThis app is open source. The source can be browsed at https://github.com/achow101/BitcointalkForum.\nPlease help contribute to the continued development of this app. You can submit code and any bugs that you find. You can also donate some Bitcoin to 1WCMh2uka2G5xyL9ojebWh1NCKCGThgu8.\n\nThis app is licensed under the GNU General Public License. License file here: https://github.com/achow101/BitcointalkForum/blob/master/LICENSE</string>

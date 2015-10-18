@@ -47,6 +47,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -322,13 +323,18 @@ public class MessagesFragment extends Fragment {
             this.sessId = sessId;
         }
 
-        // TODO: Change retrieval code to match PMs
         @Override
         protected List<Post> doInBackground(Void... params) {
             List<Post> posts = new ArrayList<Post>();
 
             try {
                 Document doc = Jsoup.connect(topicURL).cookie("PHPSESSID", mSessId).get();
+
+                if(topicURL.contains("start=0")) {
+                    FileOutputStream os = getContext().openFileOutput("messages.html", Context.MODE_PRIVATE);
+                    os.write(doc.html().getBytes());
+                    os.close();
+                }
 
                 // Get body
                 Elements body = doc.select("div#bodyarea");

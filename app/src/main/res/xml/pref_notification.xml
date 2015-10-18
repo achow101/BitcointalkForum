@@ -32,11 +32,24 @@
 
     <SwitchPreference
         android:dependency="notifications_new_message"
-        android:key="notifications_watchlist"
+        android:key="notifications_messages"
         android:title="@string/pref_title_personal_Messages"
         android:defaultValue="true" />
 
+    <SwitchPreference
+        android:dependency="notifications_new_message"
+        android:key="notifications_unreadposts"
+        android:title="@string/pref_title_unreadposts"
+        android:defaultValue="false" />
+
+    <SwitchPreference
+        android:dependency="notifications_new_message"
+        android:key="notifications_unreadreplies"
+        android:title="@string/pref_title_unreadreplies"
+        android:defaultValue="false" />
+
     <ListPreference
+        android:dependency="notifications_new_message"
         android:key="notifications_sync_freq"
         android:title="@string/pref_title_sync_frequency"
         android:defaultValue="60"
